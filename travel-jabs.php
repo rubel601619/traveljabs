@@ -1,7 +1,7 @@
 <?php 
 /**
  * Plugin Name: Traveljabs
- * Plugin URI: https://traveljabs.com/
+ * Plugin URI: https://github.com/rubel601619/traveljabs
  * Description: A comprehensive WordPress management plugin for custom post types, custom post type settings, redirect management, and other site administration features.
  * Version: 1.0.0
  * Author: Yuma Technology
