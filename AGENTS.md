@@ -12,15 +12,16 @@ Traveljabs is a modular, object-oriented WordPress plugin for managing:
 
 The plugin must use a clean and scalable OOP architecture.
 
-The first version will implement:
+The current version implements:
 
 * Traveljabs top-level admin menu
-* Destinations custom post type
-* Our Clinics custom post type
-* Category and tag support
+* Destinations custom post type (key: `destination`)
+* Our Clinics custom post type (key: `clinic`)
+* Vaccinations custom post type (key: `vaccination`)
+* Category and tag support for every custom post type
 * Traveljabs Settings page
 * Configurable rewrite slugs
-* Automatic class loading
+* Automatic class loading through Composer PSR-4
 
 ---
 
@@ -37,15 +38,15 @@ Preferred approach:
 * PSR-4 autoloading through Composer, or
 * A lightweight custom PSR-4-compatible autoloader if Composer is not used.
 
-Composer PSR-4 is preferred.
+Composer PSR-4 is preferred and already configured.
 
-The namespace should be:
+The namespace is:
 
 ```php
 Traveljabs\
 ```
 
-The `composer.json` file should define:
+The `composer.json` file defines:
 
 ```json
 {
@@ -65,9 +66,9 @@ composer dump-autoload
 
 ---
 
-# 3. Recommended Directory Structure
+# 3. Directory Structure
 
-Use the following architecture:
+The implemented architecture:
 
 ```text
 traveljabs/
@@ -80,10 +81,6 @@ traveljabs/
 │
 ├── languages/
 │
-├── assets/
-│   ├── css/
-│   └── js/
-│
 └── includes/
     │
     ├── Core/
@@ -95,9 +92,16 @@ traveljabs/
     │   └── Settings.php
     │
     └── PostTypes/
+        ├── AbstractPostType.php
         ├── Destinations.php
-        └── OurClinics.php
+        ├── OurClinics.php
+        └── Vaccinations.php
 ```
+
+Every custom post type class extends `AbstractPostType`, which holds all shared
+registration logic (supports, taxonomies, rewrite slug resolution,
+`show_in_menu` wiring, label building). Never duplicate this logic in concrete
+post type classes.
 
 The structure can be extended later with:
 
@@ -122,11 +126,12 @@ File:
 traveljabs.php
 ```
 
-The main plugin file should contain:
+The main plugin file contains:
 
 * Plugin header
 * ABSPATH protection
 * Composer autoloader loading
+* Activation/deactivation hook registration
 * Plugin bootstrap
 
 It should NOT contain:
@@ -141,7 +146,7 @@ Example header:
 ```php
 /**
  * Plugin Name: Traveljabs
- * Plugin URI: https://traveljabs.com/
+ * Plugin URI: https://github.com/rubel601619/traveljabs
  * Description: A comprehensive WordPress management plugin for custom post types, custom post type settings, redirect management, and other site administration features.
  * Version: 1.0.0
  * Author: Yuma Technology
@@ -155,7 +160,11 @@ Example header:
  */
 ```
 
-The plugin should bootstrap the application through the main `Plugin` class.
+The plugin bootstraps the application through the main `Plugin` class:
+
+```php
+\Traveljabs\Core\Plugin::instance()->run();
+```
 
 ---
 
@@ -189,6 +198,10 @@ composer.json
 
 and that the autoloader is generated correctly.
 
+Note: `vendor/` is gitignored. Deployment pipelines must still ship the
+generated autoloader; run `composer install`/`dump-autoload` when preparing a
+build if it is missing.
+
 Do not do this:
 
 ```php
@@ -196,6 +209,7 @@ require_once __DIR__ . '/includes/Admin/AdminMenu.php';
 require_once __DIR__ . '/includes/Admin/Settings.php';
 require_once __DIR__ . '/includes/PostTypes/Destinations.php';
 require_once __DIR__ . '/includes/PostTypes/OurClinics.php';
+require_once __DIR__ . '/includes/PostTypes/Vaccinations.php';
 ```
 
 Each class should be resolved through the autoloader.
@@ -210,13 +224,18 @@ Create one top-level WordPress admin menu:
 Traveljabs
 ```
 
-Menu slug:
+Implementation detail: the top-level menu is registered by
+`Traveljabs\Admin\AdminMenu` on the `admin_menu` hook at priority **9**. Its
+menu slug points to the Destinations post list screen:
 
 ```text
-traveljabs
+edit.php?post_type=destination
 ```
 
-The custom post type admin pages MUST appear as submenus under Traveljabs.
+This value lives in the `AdminMenu::PARENT_SLUG` constant and is reused as the
+`show_in_menu` argument of every custom post type, so core attaches each CPT
+submenu under Traveljabs automatically (`_add_post_type_submenus()` runs at
+priority 10).
 
 Required structure:
 
@@ -224,10 +243,14 @@ Required structure:
 Traveljabs
 ├── Destinations
 ├── Our Clinics
+├── Vaccinations
 └── Settings
 ```
 
-This means the custom post types should NOT appear as independent top-level WordPress menus.
+The Settings submenu is registered at priority **20** so it always appears
+after the CPT submenus.
+
+Custom post types must NOT appear as independent top-level WordPress menus.
 
 ---
 
@@ -278,15 +301,28 @@ Traveljabs
 
 It must NOT appear as an independent top-level WordPress admin menu.
 
-Use the appropriate `show_in_menu` configuration to associate the CPT with:
-
-```text
-traveljabs
-```
+Use the appropriate `show_in_menu` configuration to associate the CPT with the
+shared parent slug from `AdminMenu::PARENT_SLUG`.
 
 ---
 
-# 9. Traveljabs Settings
+# 9. Vaccinations Admin Menu
+
+The Vaccinations custom post type must appear under:
+
+```text
+Traveljabs
+└── Vaccinations
+```
+
+It must NOT appear as an independent top-level WordPress admin menu.
+
+Same rules apply: `show_ui => true` and `show_in_menu =>
+AdminMenu::PARENT_SLUG`.
+
+---
+
+# 10. Traveljabs Settings
 
 Create:
 
@@ -307,12 +343,12 @@ The Settings page must contain configuration for the rewrite slug of each custom
 
 ---
 
-# 10. Custom Post Type: Destinations
+# 11. Custom Post Type: Destinations
 
-Internal post type key:
+Internal post type key (stable, never change):
 
 ```text
-destinations
+destination
 ```
 
 Default frontend rewrite slug:
@@ -344,12 +380,12 @@ The post type should be public and frontend queryable.
 
 ---
 
-# 11. Custom Post Type: Our Clinics
+# 12. Custom Post Type: Our Clinics
 
-Internal post type key:
+Internal post type key (stable, never change):
 
 ```text
-our_clinic
+clinic
 ```
 
 Default frontend rewrite slug:
@@ -379,7 +415,42 @@ Recommended configuration:
 
 ---
 
-# 12. Internal Post Type Key vs Rewrite Slug
+# 13. Custom Post Type: Vaccinations
+
+Internal post type key (stable, never change):
+
+```text
+vaccination
+```
+
+Default frontend rewrite slug:
+
+```text
+vaccination
+```
+
+The post type must support:
+
+* Title
+* Editor
+* Featured Image
+* Excerpt
+* Revisions
+* Categories
+* Tags
+
+Recommended configuration:
+
+```php
+'taxonomies' => [
+    'category',
+    'post_tag',
+],
+```
+
+---
+
+# 14. Internal Post Type Key vs Rewrite Slug
 
 These are different concepts.
 
@@ -389,7 +460,7 @@ Example:
 
 ```text
 Post Type Key:
-destinations
+destination
 
 Rewrite Slug:
 destinations
@@ -405,7 +476,7 @@ the configuration becomes:
 
 ```text
 Post Type Key:
-destinations
+destination
 
 Rewrite Slug:
 places
@@ -414,7 +485,7 @@ places
 Do NOT change:
 
 ```text
-destinations
+destination
 ```
 
 to:
@@ -428,18 +499,28 @@ as the post type key.
 The same rule applies to:
 
 ```text
-our_clinic
+clinic
+vaccination
 ```
 
 ---
 
-# 13. Rewrite Slug Settings
+# 15. Rewrite Slug Settings
 
 Create these settings:
 
 ```text
 Destinations Slug
 Our Clinics Slug
+Vaccination Slug
+```
+
+Setting keys (stored identifiers — also stable):
+
+```text
+destinations_slug
+our_clinic_slug
+vaccination_slug
 ```
 
 Default values:
@@ -447,6 +528,7 @@ Default values:
 ```text
 destinations
 our-clinic
+vaccination
 ```
 
 Example:
@@ -463,6 +545,9 @@ Destinations Slug
 Our Clinics Slug
 [ our-clinic ]
 
+Vaccination Slug
+[ vaccination ]
+
 [ Save Changes ]
 ```
 
@@ -471,6 +556,7 @@ If changed:
 ```text
 destinations → places
 our-clinic → clinics
+vaccination → jabs
 ```
 
 frontend URLs should become:
@@ -478,11 +564,14 @@ frontend URLs should become:
 ```text
 /places/example-destination/
 /clinics/example-clinic/
+/jabs/example-vaccination/
 ```
+
+while the internal keys remain `destination`, `clinic`, and `vaccination`.
 
 ---
 
-# 14. WordPress Settings API
+# 16. WordPress Settings API
 
 Use:
 
@@ -492,30 +581,35 @@ add_settings_section()
 add_settings_field()
 ```
 
-Settings should be stored in a single option:
+Settings are stored in a single option:
 
 ```text
 traveljabs_settings
 ```
 
-Recommended structure:
+Current structure:
 
 ```php
 [
     'destinations_slug' => 'destinations',
     'our_clinic_slug'   => 'our-clinic',
+    'vaccination_slug'  => 'vaccination',
 ]
 ```
+
+All slug fields are declared in one place: `Settings::get_slug_fields()`.
+Adding a field there automatically wires sanitization, the settings form, and
+change detection for rewrite flushing.
 
 Do not create a custom database table for these settings.
 
 ---
 
-# 15. Sanitization
+# 17. Sanitization
 
 Rewrite slugs must be sanitized.
 
-Recommended:
+Required:
 
 ```php
 sanitize_title()
@@ -531,7 +625,7 @@ The implementation must:
 
 ---
 
-# 16. Rewrite Rule Flushing
+# 18. Rewrite Rule Flushing
 
 Never call:
 
@@ -561,11 +655,14 @@ If slug changed
 Flush rewrite rules
 ```
 
+The comparison is implemented on the `update_option_traveljabs_settings` hook
+in `Settings::maybe_flush_rewrite_rules()`.
+
 ---
 
-# 17. Plugin Activation
+# 19. Plugin Activation
 
-Create:
+File:
 
 ```text
 includes/Core/Activator.php
@@ -574,36 +671,39 @@ includes/Core/Activator.php
 The activation process must:
 
 1. Set default settings if they don't already exist.
-2. Register the custom post types.
+2. Register all custom post types.
 3. Register required taxonomies.
 4. Flush rewrite rules.
 
 Existing settings must never be overwritten during activation.
 
+On deactivation only flush rewrite rules. Do not delete any data.
+
 ---
 
-# 18. Plugin Bootstrap
+# 20. Plugin Bootstrap
 
-Create:
+File:
 
 ```text
 includes/Core/Plugin.php
 ```
 
-The `Plugin` class should act as the main application/bootstrap class.
+The `Plugin` class acts as the main application/bootstrap class.
 
-It should initialize:
+It initializes:
 
 ```text
 AdminMenu
 Settings
 Destinations
 OurClinics
+Vaccinations
 ```
 
 Use WordPress hooks to register functionality.
 
-Example architecture:
+Architecture:
 
 ```text
 traveljabs.php
@@ -616,12 +716,16 @@ Initialize Modules
       ├── AdminMenu
       ├── Settings
       ├── Destinations
-      └── OurClinics
+      ├── OurClinics
+      └── Vaccinations
 ```
+
+Each module registers its own hooks in its constructor; `Plugin` only wires
+them together and loads the text domain.
 
 ---
 
-# 19. Security
+# 21. Security
 
 All admin functionality must implement appropriate security.
 
@@ -633,7 +737,7 @@ Requirements:
 * Escaping
 * Nonces where appropriate
 
-Settings should require:
+Settings require:
 
 ```text
 manage_options
@@ -651,7 +755,7 @@ without validation/sanitization.
 
 ---
 
-# 20. Internationalization
+# 22. Internationalization
 
 Use the text domain:
 
@@ -671,7 +775,7 @@ Use appropriate escaping functions where required.
 
 ---
 
-# 21. WordPress Coding Standards
+# 23. WordPress Coding Standards
 
 Follow WordPress PHP coding standards.
 
@@ -689,7 +793,7 @@ Requirements:
 
 ---
 
-# 22. Future Extensibility
+# 24. Future Extensibility
 
 The plugin is expected to eventually contain additional functionality.
 
@@ -706,15 +810,15 @@ Dashboard
 Location Management
 ```
 
-Do not implement these now.
+Do not implement these until required.
 
-The current architecture must allow these modules to be added without rewriting the core plugin.
+The current architecture allows these modules to be added without rewriting the core plugin.
 
 ---
 
-# 23. Uninstall
+# 25. Uninstall
 
-Create:
+File:
 
 ```text
 uninstall.php
@@ -724,6 +828,7 @@ Do not delete:
 
 * Destinations
 * Clinics
+* Vaccinations
 * Categories
 * Tags
 * User content
@@ -732,37 +837,74 @@ Do not remove settings automatically unless an explicit clean-uninstall mechanis
 
 ---
 
-# 24. Acceptance Criteria
+# 26. Adding a New Custom Post Type
 
-The implementation is complete only when:
+Follow this exact checklist when registering another CPT:
 
-* [ ] Plugin activates without PHP errors.
-* [ ] Composer autoload works.
-* [ ] No class requires are manually duplicated throughout the plugin.
-* [ ] Traveljabs appears as the top-level admin menu.
-* [ ] Destinations appears as a Traveljabs submenu.
-* [ ] Our Clinics appears as a Traveljabs submenu.
-* [ ] Settings appears as a Traveljabs submenu.
-* [ ] Destinations CPT works.
-* [ ] Our Clinics CPT works.
-* [ ] Both CPTs support categories.
-* [ ] Both CPTs support tags.
-* [ ] Both CPTs support featured images.
-* [ ] Both CPTs support excerpts.
-* [ ] Rewrite slugs are configurable.
-* [ ] Internal post type keys remain unchanged.
-* [ ] Rewrite rules are flushed only when necessary.
-* [ ] Settings are sanitized.
-* [ ] Admin output is escaped.
-* [ ] Capability checks are implemented.
-* [ ] All classes use the Traveljabs namespace.
-* [ ] All classes are loaded through autoloading.
-* [ ] No unnecessary database tables are created.
-* [ ] Architecture is ready for future modules.
+1. Create `includes/PostTypes/{Name}.php` extending
+   `Traveljabs\PostTypes\AbstractPostType` and implement:
+
+   ```php
+   protected function get_key(): string;          // internal, stable post type key
+   protected function get_labels(): array;        // use $this->build_labels( plural, singular, overrides )
+   protected function get_slug_setting_key(): string;
+   ```
+
+2. Add the default slug field to `Settings::get_slug_fields()`:
+
+   ```php
+   '{name}_slug' => 'default-slug',
+   ```
+
+3. Add its translated label to `Settings::get_field_label()`.
+
+4. Instantiate the module in `Plugin::run()` (property + assignment).
+
+5. Register it in `Activator::activate()` so permalinks work after activation.
+
+6. Update the README.md table and admin menu diagram.
+
+7. Flush rewrite rules once after deploying (re-activate the plugin or visit
+   Settings → Permalinks) so the new CPT URLs resolve.
+
+No other changes are required: submenu placement, sanitization, settings form
+fields, and conditional flushing are derived automatically.
 
 ---
 
-# 25. Development Rule
+# 27. Acceptance Criteria
+
+The implementation is complete only when:
+
+* [x] Plugin activates without PHP errors.
+* [x] Composer autoload works.
+* [x] No class requires are manually duplicated throughout the plugin.
+* [x] Traveljabs appears as the top-level admin menu.
+* [x] Destinations appears as a Traveljabs submenu.
+* [x] Our Clinics appears as a Traveljabs submenu.
+* [x] Vaccinations appears as a Traveljabs submenu.
+* [x] Settings appears as a Traveljabs submenu.
+* [x] Destinations CPT works (key: `destination`).
+* [x] Our Clinics CPT works (key: `clinic`).
+* [x] Vaccinations CPT works (key: `vaccination`).
+* [x] All three CPTs support categories.
+* [x] All three CPTs support tags.
+* [x] All three CPTs support featured images.
+* [x] All three CPTs support excerpts.
+* [x] Rewrite slugs are configurable.
+* [x] Internal post type keys remain unchanged.
+* [x] Rewrite rules are flushed only when necessary.
+* [x] Settings are sanitized.
+* [x] Admin output is escaped.
+* [x] Capability checks are implemented.
+* [x] All classes use the Traveljabs namespace.
+* [x] All classes are loaded through autoloading.
+* [x] No unnecessary database tables are created.
+* [x] Architecture is ready for future modules.
+
+---
+
+# 28. Development Rule
 
 Before writing code:
 
