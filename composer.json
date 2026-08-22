@@ -1,0 +1,20 @@
+{
+    "name": "yuma-technology/traveljabs",
+    "description": "A comprehensive WordPress management plugin for custom post types, custom post type settings, redirect management, and other site administration features.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Yuma Technology",
+            "homepage": "https://yuma-technology.co.uk/"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Traveljabs\\": "includes/"
+        }
+    }
+}
