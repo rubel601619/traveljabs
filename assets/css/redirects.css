@@ -1,0 +1,76 @@
+/* Traveljabs Redirects admin page. */
+
+.traveljabs-redirect-form-card {
+	max-width: 720px;
+	margin-bottom: 24px;
+}
+
+.traveljabs-field {
+	margin-bottom: 14px;
+}
+
+.traveljabs-field > label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.traveljabs-field .description {
+	margin-top: 4px;
+	margin-bottom: 8px;
+}
+
+.tj-source-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.tj-source-row .tj-source-input {
+	flex: 1;
+	min-width: 0;
+}
+
+.tj-source-row .button {
+	flex: 0 0 auto;
+	line-height: 26px;
+	height: 30px;
+	padding: 0 10px;
+}
+
+.tj-source-input.tj-duplicate {
+	border-color: #d63638;
+	box-shadow: 0 0 0 1px #d63638;
+}
+
+.traveljabs-path {
+	display: inline-block;
+	max-width: 320px;
+	overflow-wrap: anywhere;
+	white-space: normal;
+	word-break: break-word;
+}
+
+.traveljabs-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-right: 4px;
+	vertical-align: middle;
+	background: #dcdcde;
+}
+
+.traveljabs-dot--on {
+	background: #00a32a;
+}
+
+.traveljabs-dot--off {
+	background: #d63638;
+}
+
+.search-form .search-box {
+	float: right;
+	margin: 0 0 10px;
+}

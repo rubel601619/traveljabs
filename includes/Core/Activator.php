@@ -11,6 +11,7 @@ use Traveljabs\Admin\Settings;
 use Traveljabs\PostTypes\Destinations;
 use Traveljabs\PostTypes\OurClinics;
 use Traveljabs\PostTypes\Vaccinations;
+use Traveljabs\Redirects\RedirectTable;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -36,6 +37,8 @@ final class Activator {
 		( new Destinations() )->register_post_type();
 		( new OurClinics() )->register_post_type();
 		( new Vaccinations() )->register_post_type();
+
+		RedirectTable::install();
 
 		flush_rewrite_rules();
 	}

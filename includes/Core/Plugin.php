@@ -13,6 +13,8 @@ use Traveljabs\Meta\ClinicDetails;
 use Traveljabs\PostTypes\Destinations;
 use Traveljabs\PostTypes\OurClinics;
 use Traveljabs\PostTypes\Vaccinations;
+use Traveljabs\Redirects\RedirectAdmin;
+use Traveljabs\Redirects\RedirectManager;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -70,6 +72,20 @@ final class Plugin {
 	 */
 	private ClinicDetails $clinic_details;
 
+	/**
+	 * Redirect business logic module.
+	 *
+	 * @var RedirectManager
+	 */
+	private RedirectManager $redirect_manager;
+
+	/**
+	 * Redirect admin UI module.
+	 *
+	 * @var RedirectAdmin
+	 */
+	private RedirectAdmin $redirect_admin;
+
 
 	/**
 	 * Private constructor. Use instance().
@@ -95,12 +111,14 @@ final class Plugin {
 	 * @return void
 	 */
 	public function run(): void {
-		$this->admin_menu      = new AdminMenu();
-		$this->settings        = new Settings();
-		$this->destinations    = new Destinations();
-		$this->our_clinics     = new OurClinics();
-		$this->vaccinations    = new Vaccinations();
-		$this->clinic_details  = new ClinicDetails();
+		$this->admin_menu       = new AdminMenu();
+		$this->settings         = new Settings();
+		$this->destinations     = new Destinations();
+		$this->our_clinics      = new OurClinics();
+		$this->vaccinations     = new Vaccinations();
+		$this->clinic_details   = new ClinicDetails();
+		$this->redirect_manager = new RedirectManager();
+		$this->redirect_admin   = new RedirectAdmin( $this->redirect_manager );
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}
