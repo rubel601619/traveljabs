@@ -9,6 +9,7 @@ namespace Traveljabs\Core;
 
 use Traveljabs\Admin\AdminMenu;
 use Traveljabs\Admin\Settings;
+use Traveljabs\Meta\ClinicDetails;
 use Traveljabs\PostTypes\Destinations;
 use Traveljabs\PostTypes\OurClinics;
 use Traveljabs\PostTypes\Vaccinations;
@@ -62,6 +63,13 @@ final class Plugin {
 	 */
 	private Vaccinations $vaccinations;
 
+	/**
+	 * Clinic Details field group module.
+	 *
+	 * @var ClinicDetails
+	 */
+	private ClinicDetails $clinic_details;
+
 
 	/**
 	 * Private constructor. Use instance().
@@ -87,11 +95,12 @@ final class Plugin {
 	 * @return void
 	 */
 	public function run(): void {
-		$this->admin_menu   = new AdminMenu();
-		$this->settings     = new Settings();
-		$this->destinations = new Destinations();
-		$this->our_clinics  = new OurClinics();
-		$this->vaccinations = new Vaccinations();
+		$this->admin_menu      = new AdminMenu();
+		$this->settings        = new Settings();
+		$this->destinations    = new Destinations();
+		$this->our_clinics     = new OurClinics();
+		$this->vaccinations    = new Vaccinations();
+		$this->clinic_details  = new ClinicDetails();
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}

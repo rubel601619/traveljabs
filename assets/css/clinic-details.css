@@ -1,0 +1,74 @@
+/* Clinic Details field group. */
+
+.traveljabs-field {
+	margin: 0 0 16px;
+}
+
+.traveljabs-field__label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.traveljabs-field .required {
+	color: #d63638;
+	margin-left: 2px;
+}
+
+.traveljabs-field--textarea textarea {
+	width: 100%;
+	max-width: 552px;
+}
+
+.traveljabs-field .description,
+.traveljabs-repeater .description {
+	margin-top: 4px;
+}
+
+/* Opening hours repeater. */
+
+.traveljabs-repeater__table {
+	max-width: 552px;
+}
+
+.traveljabs-repeater__table th,
+.traveljabs-repeater__table td {
+	padding: 8px 10px;
+	vertical-align: middle;
+}
+
+.traveljabs-repeater__actions {
+	width: 48px;
+	text-align: right;
+}
+
+.traveljabs-hours-row.is-template {
+	display: none;
+}
+
+.traveljabs-hours-remove {
+	color: #b32d2e;
+	cursor: pointer;
+	padding: 2px;
+}
+
+.traveljabs-hours-remove:focus {
+	color: #8a2424;
+	outline: 1px dotted currentColor;
+}
+
+.traveljabs-hours-remove .dashicons {
+	font-size: 16px;
+	height: 16px;
+	width: 16px;
+}
+
+.traveljabs-repeater__footer {
+	margin-top: 8px;
+}
+
+.traveljabs-repeater__footer .dashicons {
+	line-height: 1;
+	margin-right: 2px;
+	vertical-align: text-bottom;
+}

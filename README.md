@@ -26,11 +26,17 @@ traveljabs/
     ├── Admin/
     │   ├── AdminMenu.php   # Top-level Traveljabs menu
     │   └── Settings.php    # Settings API page
+    ├── Meta/
+    │   ├── AbstractFieldGroup.php  # Shared meta box / field group logic
+    │   └── ClinicDetails.php       # Clinic Details group + opening hours
     └── PostTypes/
         ├── AbstractPostType.php
         ├── Destinations.php
         ├── OurClinics.php
         └── Vaccinations.php
+└── assets/
+    ├── css/clinic-details.css
+    └── js/clinic-details.js
 ```
 
 ## Admin Menu
@@ -68,6 +74,22 @@ Stored in the single option `traveljabs_settings`:
 ```
 
 Slugs are sanitized with `sanitize_title()`; empty values fall back to defaults. Rewrite rules are flushed only on activation, deactivation, or an actual slug change — never on every request.
+
+## Custom Fields
+
+Custom field groups are registered as native meta boxes (no ACF dependency). The `Clinic Details` group (`group_clinic_details`) attaches to the `clinic` post type:
+
+| Meta key              | Field     | Type     | Required |
+|-----------------------|-----------|----------|----------|
+| `clinic_address`      | Address   | textarea | yes      |
+| `clinic_postcode`     | Postcode  | text     | yes      |
+| `clinic_phone`        | Phone     | text     | no       |
+| `clinic_email`        | Email     | email    | no       |
+| `clinic_latitude`     | Latitude  | number   | no       |
+| `clinic_longitude`    | Longitude | number   | no       |
+| `clinic_opening_hours`| Opening Hours | repeater (day + time rows with Add/Remove) | no |
+
+All meta is registered through `register_post_meta()` with sanitization callbacks and is exposed in REST. The opening hours repeater stores an array of `{ day, time }` rows; empty rows are dropped.
 
 ## Development
 
