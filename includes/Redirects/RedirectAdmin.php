@@ -475,10 +475,14 @@ final class RedirectAdmin {
 	/**
 	 * Builds a nonce-protected action URL.
 	 *
-	 * @param string                     $action      admin.php action value.
-	 * @param int                        $id          Record ID.
+	 * The URL targets admin-post.php because the delete/toggle handlers are
+	 * registered on the admin_post_{$action} hooks, which only fire on
+	 * requests to that endpoint.
+	 *
+	 * @param string                     $action       Action hook name.
+	 * @param int                        $id           Record ID.
 	 * @param string                     $nonce_action Nonce action name.
-	 * @param array<string, string|int>  $extra       Extra query args preserved.
+	 * @param array<string, string|int>  $extra        Extra query args preserved.
 	 * @return string
 	 */
 	private function action_url( string $action, int $id, string $nonce_action, array $extra = array() ): string {
@@ -491,7 +495,7 @@ final class RedirectAdmin {
 		);
 
 		return wp_nonce_url(
-			add_query_arg( $args, admin_url( 'admin.php' ) ),
+			add_query_arg( $args, admin_url( 'admin-post.php' ) ),
 			$nonce_action
 		);
 	}
