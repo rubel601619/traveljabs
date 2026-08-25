@@ -3,6 +3,16 @@
  * Scoped under .tjb-cs to avoid collisions with theme styles.
  */
 
+.archive-clinic-single{
+	background: linear-gradient(45deg black 100%, red 0%);
+
+	.feature-section{
+		--feature-height: 300px;
+		height: var(--feature-height);
+		min-height: var(--feature-height);
+	}
+}
+ 
 .tjb-cs {
 	margin: 0 auto;
 	max-width: 1200px;

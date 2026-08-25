@@ -13,6 +13,12 @@ defined( 'ABSPATH' ) || exit;
 get_header();
 ?>
 
+
+
+<main class="archive-clinic-single">
+	<div class="feature-section"></div>
+</main>
+
 <main class="tjb-cs">
 
 	<article class="tjb-cs__post">
