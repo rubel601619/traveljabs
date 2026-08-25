@@ -10,6 +10,7 @@ namespace Traveljabs\Core;
 use Traveljabs\Admin\AdminMenu;
 use Traveljabs\Admin\Settings;
 use Traveljabs\Meta\ClinicDetails;
+use Traveljabs\PostTypes\Clinic\ClinicSingle;
 use Traveljabs\PostTypes\Destinations;
 use Traveljabs\PostTypes\OurClinics;
 use Traveljabs\PostTypes\Vaccinations;
@@ -73,6 +74,13 @@ final class Plugin {
 	private ClinicDetails $clinic_details;
 
 	/**
+	 * Clinic single-post module.
+	 *
+	 * @var ClinicSingle
+	 */
+	private ClinicSingle $clinic_single;
+
+	/**
 	 * Redirect business logic module.
 	 *
 	 * @var RedirectManager
@@ -117,6 +125,7 @@ final class Plugin {
 		$this->our_clinics      = new OurClinics();
 		$this->vaccinations     = new Vaccinations();
 		$this->clinic_details   = new ClinicDetails();
+		$this->clinic_single    = new ClinicSingle();
 		$this->redirect_manager = new RedirectManager();
 		$this->redirect_admin   = new RedirectAdmin( $this->redirect_manager );
 

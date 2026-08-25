@@ -18,6 +18,8 @@ defined( 'ABSPATH' ) || exit;
 
 define( 'TRAVELJABS_VERSION', '1.0.0' );
 define( 'TRAVELJABS_FILE', __FILE__ );
+define( 'TRAVELJABS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'TRAVELJABS_URL', plugin_dir_url( __FILE__ ) );
 
 require_once __DIR__ . '/vendor/autoload.php';
 
