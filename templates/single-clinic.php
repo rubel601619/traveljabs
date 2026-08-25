@@ -51,6 +51,7 @@ get_header();
 						<?php
 						$tjb_phone     = trim( (string) get_post_meta( get_the_ID(), 'clinic_phone', true ) );
 						$tjb_email     = trim( (string) get_post_meta( get_the_ID(), 'clinic_email', true ) );
+						$tjb_website   = esc_url( trim( (string) get_post_meta( get_the_ID(), 'clinic_website', true ) ) );
 						$tjb_address   = trim( (string) get_post_meta( get_the_ID(), 'clinic_address', true ) );
 						$tjb_postcode  = trim( (string) get_post_meta( get_the_ID(), 'clinic_postcode', true ) );
 						$tjb_latitude  = (string) get_post_meta( get_the_ID(), 'clinic_latitude', true );
@@ -84,6 +85,13 @@ get_header();
 									<div class="tjb-cs__contact-row">
 										<dt><?php esc_html_e( 'Email', 'traveljabs' ); ?></dt>
 										<dd><a href="<?php echo esc_url( 'mailto:' . $tjb_email ); ?>"><?php echo esc_html( $tjb_email ); ?></a></dd>
+									</div>
+								<?php endif; ?>
+
+								<?php if ( '' !== $tjb_website ) : ?>
+									<div class="tjb-cs__contact-row">
+										<dt><?php esc_html_e( 'Website', 'traveljabs' ); ?></dt>
+										<dd><a href="<?php echo esc_url( $tjb_website ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $tjb_website ); ?></a></dd>
 									</div>
 								<?php endif; ?>
 

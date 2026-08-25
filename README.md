@@ -85,6 +85,7 @@ Custom field groups are registered as native meta boxes (no ACF dependency). The
 | `clinic_postcode`     | Postcode  | text     | yes      |
 | `clinic_phone`        | Phone     | text     | no       |
 | `clinic_email`        | Email     | email    | no       |
+| `clinic_website`      | Website   | url      | no       |
 | `clinic_latitude`     | Latitude  | number   | no       |
 | `clinic_longitude`    | Longitude | number   | no       |
 | `clinic_opening_hours`| Opening Hours | repeater (day + time rows with Add/Remove) | no |

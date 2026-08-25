@@ -217,6 +217,8 @@ abstract class AbstractFieldGroup {
 				return sanitize_textarea_field( $value );
 			case 'email':
 				return sanitize_email( $value );
+			case 'url':
+				return esc_url_raw( $value );
 			case 'number':
 				return is_numeric( $value ) ? $value : '';
 			default:

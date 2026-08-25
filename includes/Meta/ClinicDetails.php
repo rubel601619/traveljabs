@@ -90,6 +90,13 @@ final class ClinicDetails extends AbstractFieldGroup {
 				'instructions' => __( 'Public contact email address.', 'traveljabs' ),
 			),
 			array(
+				'key'          => 'field_clinic_website',
+				'label'        => __( 'Website', 'traveljabs' ),
+				'name'         => 'clinic_website',
+				'type'         => 'url',
+				'instructions' => __( 'Public clinic website URL.', 'traveljabs' ),
+			),
+			array(
 				'key'          => 'field_clinic_latitude',
 				'label'        => __( 'Latitude', 'traveljabs' ),
 				'name'         => 'clinic_latitude',
