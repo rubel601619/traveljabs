@@ -4,32 +4,106 @@
  */
 
 .archive-clinic-single{
-	background: linear-gradient(45deg black 100%, red 0%);
+	background: #f0fafd;
+
+	.tjb-container{
+		--container-padding: 30px;
+		margin-inline: auto;
+		padding-inline: 20px;
+		padding-block: var(--container-padding);
+		max-width: 1300px;
+	}
 
 	.feature-section{
 		--feature-height: 300px;
+		--h1-text-size: 1.5rem;
+		position: relative;
+		z-index: 1;
+		overflow: hidden;
+		background: linear-gradient(90deg, #3871C1 50%, #7ECB2B 100%);
 		height: var(--feature-height);
 		min-height: var(--feature-height);
+		.feature-overlay{
+			position: absolute;
+			inset: 0;
+			z-index: 2;
+			background-color: rgba(0, 0, 0,0.2);
+		}
+		.feature-archive-single-image{
+			height: 100%;
+			width: 100%;
+			object-fit: cover;
+		}
+		.title-content{
+			position: absolute;
+			inset: 0;
+			z-index: 3;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 25px;
+			height: 100%;
+			h1{
+				font-size: var(--h1-text-size, 1.5rem);
+				color: white;
+			}
+		}
 	}
-}
- 
-.tjb-cs {
-	margin: 0 auto;
-	max-width: 1200px;
-	padding: 0 1.25rem 3rem;
-}
 
-.tjb-cs__container {
-	margin: 0 auto;
-	max-width: 1200px;
-}
+	.grid-item{
+		--content-width: 100%;
+		--sidebar-width: 100%;
+		--space-x: 20px;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-x);
 
+		.archive-content{
+			width: var(--content-width);
+		}
+		.archive-sidebar{
+			width: var(--sidebar-width);
+			background-color: white;
+			padding: 15px;
+			border: 1px solid #dee2e6;
+		}
+	}
+	 
+	@media(min-width: 768px){
+		.grid-item{
+			--content-width: calc(100% - 300px);
+			--sidebar-width: 300px;
+			--space-x: 20px;
+			flex-direction: row;
+		}
+		
+		.tjb-container{
+			--container-padding: 45px;
+		}
+		.feature-section{
+			--feature-height: 400px;
+			--h1-text-size: 2rem;
+		}
+	}
+	@media(min-width: 1200px){
+		.grid-item{
+			--content-width: calc(100% - 350px);
+			--sidebar-width: 350px;
+			--space-x: 30px;
+			flex-direction: row;
+		}
+		.tjb-container{
+			--container-padding: 70px;
+		}
+		.feature-section{
+			--feature-height: 500px;
+			--h1-text-size: 3rem;
+		}
+	}
+
+}
 /* ── Hero ─────────────────────────────────────────── */
 
-.tjb-cs__hero {
-	padding: 2.5rem 0 2rem;
-	text-align: center;
-}
 
 .tjb-cs__featured-image {
 	margin-bottom: 1.5rem;
