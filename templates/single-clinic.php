@@ -119,7 +119,7 @@ get_header();
 					<?php endif; ?>
 				</section>
 
-				<h2 class="tjb-cs__sidebar-title"><?php esc_html_e( 'Recent Clinics', 'traveljabs' ); ?></h2>
+				<h2 class="tjb-cs__sidebar-title"><?php esc_html_e( 'Others Clinics', 'traveljabs' ); ?></h2>
 
 				<?php
 				$tjb_recent_query = new \WP_Query(
