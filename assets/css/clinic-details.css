@@ -1,5 +1,23 @@
 /* Clinic Details field group. */
 
+
+.traveljabs-field-group{
+	background: linear-gradient(45deg, #bacef94f, #e5ffe8db);
+	box-sizing: border-box;
+	padding: 20px 15px;
+	*{
+		box-sizing: border-box;
+	}
+}
+.traveljabs-innerfield-box{
+	background-color: white;
+	border: 1px solid #dee2e6;
+	padding: 25px;
+	width: 100%;
+	max-width: 540px;
+	margin-inline: auto;
+}
+
 .traveljabs-field {
 	margin: 0 0 16px;
 }

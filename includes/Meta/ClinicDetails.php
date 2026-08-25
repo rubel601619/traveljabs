@@ -122,12 +122,12 @@ final class ClinicDetails extends AbstractFieldGroup {
 				<?php echo esc_html__( 'Opening Hours', 'traveljabs' ); ?>
 			</span>
 
-			<table class="widefat striped traveljabs-repeater__table">
+			<table class="widefat striped traveljabs-repeater__table" style="width: 100%; min-width: 100%;">
 				<thead>
 					<tr>
-						<th scope="col"><?php echo esc_html__( 'Day', 'traveljabs' ); ?></th>
-						<th scope="col"><?php echo esc_html__( 'Time', 'traveljabs' ); ?></th>
-						<th scope="col" class="traveljabs-repeater__actions"><span class="screen-reader-text"><?php echo esc_html__( 'Actions', 'traveljabs' ); ?></span></th>
+						<th scope="col" style="width: 45%"><?php echo esc_html__( 'Day', 'traveljabs' ); ?></th>
+						<th scope="col" style="width: 45%"><?php echo esc_html__( 'Time', 'traveljabs' ); ?></th>
+						<th scope="col" style="width: 10%" class="traveljabs-repeater__actions"><span class="screen-reader-text"><?php echo esc_html__( 'Actions', 'traveljabs' ); ?></span></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -289,7 +289,7 @@ final class ClinicDetails extends AbstractFieldGroup {
 		);
 
 		printf(
-			'<td><input type="text" name="%1$s[day][]" class="regular-text" aria-label="%2$s" placeholder="%3$s" value="%4$s" /></td>',
+			'<td><input type="text" name="%1$s[day][]" class="widefat" aria-label="%2$s" placeholder="%3$s" value="%4$s" /></td>',
 			esc_attr( $base_name ),
 			esc_attr__( 'Day', 'traveljabs' ),
 			esc_attr__( 'Monday', 'traveljabs' ),
@@ -297,7 +297,7 @@ final class ClinicDetails extends AbstractFieldGroup {
 		);
 
 		printf(
-			'<td><input type="text" name="%1$s[time][]" class="regular-text" aria-label="%2$s" placeholder="%3$s" value="%4$s" /></td>',
+			'<td><input type="text" name="%1$s[time][]" class="widefat" aria-label="%2$s" placeholder="%3$s" value="%4$s" /></td>',
 			esc_attr( $base_name ),
 			esc_attr__( 'Time', 'traveljabs' ),
 			esc_attr__( '9:00 AM - 5:00 PM', 'traveljabs' ),

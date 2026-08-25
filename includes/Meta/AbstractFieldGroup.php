@@ -139,7 +139,7 @@ abstract class AbstractFieldGroup {
 			self::NONCE_FIELD_PREFIX . $this->get_group_key()
 		);
 
-		echo '<div class="traveljabs-field-group">';
+		echo '<div class="traveljabs-field-group"><div class="traveljabs-innerfield-box">';
 
 		foreach ( $this->get_fields() as $field ) {
 			$this->render_field( $post->ID, $field );
@@ -147,7 +147,7 @@ abstract class AbstractFieldGroup {
 
 		$this->render_extras( $post );
 
-		echo '</div>';
+		echo '</div></div>';
 	}
 
 	/**
