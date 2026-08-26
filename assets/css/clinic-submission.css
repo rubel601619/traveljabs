@@ -1,0 +1,52 @@
+.traveljabs-clinic-submission__summary,
+.traveljabs-clinic-submission__message,
+.traveljabs-clinic-submission__success,
+.traveljabs-clinic-submission__errors {
+	margin: 0 0 1.5rem;
+	padding: 1rem;
+	border: 1px solid #dfe5eb;
+	background: #f8fafc;
+}
+
+.traveljabs-clinic-submission__success {
+	border-color: #a7d7b2;
+	background: #effaf1;
+}
+
+.traveljabs-clinic-submission__errors {
+	border-color: #e4b5b5;
+	background: #fff5f5;
+}
+
+.traveljabs-clinic-submission__form-wrap label {
+	display: block;
+	margin-bottom: 0.35rem;
+	font-weight: 600;
+}
+
+.traveljabs-clinic-submission__form-wrap input[type="text"],
+.traveljabs-clinic-submission__form-wrap input[type="email"],
+.traveljabs-clinic-submission__form-wrap input[type="url"],
+.traveljabs-clinic-submission__form-wrap input[type="number"] {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 42rem;
+	padding: 0.65rem 0.75rem;
+}
+
+.traveljabs-clinic-submission__form-wrap p {
+	margin: 0 0 1rem;
+}
+
+.traveljabs-selected-image {
+	display: inline-block;
+	margin-left: 0.75rem;
+}
+
+.traveljabs-clinic-submission__owned {
+	margin: 0 0 2rem;
+}
+
+.traveljabs-clinic-submission__owned ul {
+	padding-left: 1.25rem;
+}

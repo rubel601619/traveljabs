@@ -64,6 +64,20 @@ final class Settings {
 	}
 
 	/**
+	 * Returns configurable WooCommerce package mapping fields.
+	 *
+	 * @return array<string, int|string>
+	 */
+	public static function get_package_fields(): array {
+		return array(
+			'bronze_product_id'  => 0,
+			'silver_product_id'  => 0,
+			'gold_product_id'    => 0,
+			'package_purchase_url' => '',
+		);
+	}
+
+	/**
 	 * Adds the Settings submenu under the Traveljabs top-level menu.
 	 *
 	 * Priority 20 places it after the custom post type submenus that core
@@ -141,6 +155,27 @@ final class Settings {
 		}
 
 		add_settings_section(
+			'clinic_packages_section',
+			__( 'Clinic Packages', 'traveljabs' ),
+			array( $this, 'render_clinic_packages_section_description' ),
+			self::PAGE_SLUG
+		);
+
+		foreach ( self::get_package_fields() as $key => $default ) {
+			add_settings_field(
+				$key,
+				$this->get_field_label( $key ),
+				array( $this, 'render_package_field' ),
+				self::PAGE_SLUG,
+				'clinic_packages_section',
+				array(
+					'setting_key' => $key,
+					'default'     => $default,
+				)
+			);
+		}
+
+		add_settings_section(
 			'destination_search_section',
 			__( 'Destination Search Shortcode', 'traveljabs' ),
 			array( $this, 'render_destination_search_section_description' ),
@@ -151,6 +186,13 @@ final class Settings {
 			'clinic_search_section',
 			__( 'Clinic Search Shortcode', 'traveljabs' ),
 			array( $this, 'render_clinic_search_section_description' ),
+			self::PAGE_SLUG
+		);
+
+		add_settings_section(
+			'clinic_submission_section',
+			__( 'Clinic Submission Shortcode', 'traveljabs' ),
+			array( $this, 'render_clinic_submission_section_description' ),
 			self::PAGE_SLUG
 		);
 	}
@@ -167,6 +209,10 @@ final class Settings {
 			'our_clinic_slug'   => __( 'Our Clinics Slug', 'traveljabs' ),
 			'vaccination_slug'  => __( 'Vaccination Slug', 'traveljabs' ),
 			'google_maps_api_key' => __( 'Google Maps API Key', 'traveljabs' ),
+			'bronze_product_id'   => __( 'Bronze Product ID', 'traveljabs' ),
+			'silver_product_id'   => __( 'Silver Product ID', 'traveljabs' ),
+			'gold_product_id'     => __( 'Gold Product ID', 'traveljabs' ),
+			'package_purchase_url' => __( 'Package Purchase URL', 'traveljabs' ),
 		);
 
 		return isset( $labels[ $key ] ) ? $labels[ $key ] : '';
@@ -191,6 +237,15 @@ final class Settings {
 	}
 
 	/**
+	 * Explains the WooCommerce package mapping fields.
+	 *
+	 * @return void
+	 */
+	public function render_clinic_packages_section_description(): void {
+		echo '<p class="description">' . esc_html__( 'Enter the WooCommerce product IDs for the Bronze, Silver, and Gold clinic packages. Only processing or completed orders grant clinic capacity. Optionally enter the page where users can purchase or upgrade a package.', 'traveljabs' ) . '</p>';
+	}
+
+	/**
 	 * Explains how to use the destination search shortcode.
 	 *
 	 * @return void
@@ -208,6 +263,16 @@ final class Settings {
 	public function render_clinic_search_section_description(): void {
 		echo '<p class="description">' . esc_html__( 'Add the following shortcode to any page or post to display the clinic search, clinic list, and Google Map:', 'traveljabs' ) . '</p>';
 		echo '<code>' . esc_html( '[search-clinic]' ) . '</code>';
+	}
+
+	/**
+	 * Explains how to use the clinic submission shortcode.
+	 *
+	 * @return void
+	 */
+	public function render_clinic_submission_section_description(): void {
+		echo '<p class="description">' . esc_html__( 'Add the following shortcode to a page to let logged-in users with an active WooCommerce package submit clinics from the frontend:', 'traveljabs' ) . '</p>';
+		echo '<code>' . esc_html( '[clinic_submission]' ) . '</code>';
 	}
 
 	/**
@@ -271,6 +336,28 @@ final class Settings {
 	}
 
 	/**
+	 * Renders a package mapping field.
+	 *
+	 * @param array<string, int|string> $args Field arguments.
+	 * @return void
+	 */
+	public function render_package_field( array $args ): void {
+		$key     = isset( $args['setting_key'] ) ? (string) $args['setting_key'] : '';
+		$default = isset( $args['default'] ) ? (string) $args['default'] : '';
+		$options = $this->get_options();
+		$value   = isset( $options[ $key ] ) ? (string) $options[ $key ] : $default;
+		$type    = 'package_purchase_url' === $key ? 'url' : 'number';
+
+		printf(
+			'<input type="%1$s" id="%2$s" name="%3$s[%2$s]" value="%4$s" class="regular-text" min="0" />',
+			esc_attr( $type ),
+			esc_attr( $key ),
+			esc_attr( self::OPTION_KEY ),
+			esc_attr( $value )
+		);
+	}
+
+	/**
 	 * Sanitizes the submitted settings.
 	 *
 	 * Slugs are normalized with sanitize_title(); empty values fall back to
@@ -292,6 +379,15 @@ final class Settings {
 
 		foreach ( self::get_google_maps_fields() as $key => $default ) {
 			$clean[ $key ] = isset( $input[ $key ] ) ? sanitize_text_field( (string) $input[ $key ] ) : $default;
+		}
+
+		foreach ( self::get_package_fields() as $key => $default ) {
+			if ( 'package_purchase_url' === $key ) {
+				$clean[ $key ] = isset( $input[ $key ] ) ? esc_url_raw( (string) $input[ $key ] ) : $default;
+				continue;
+			}
+
+			$clean[ $key ] = isset( $input[ $key ] ) ? absint( $input[ $key ] ) : (int) $default;
 		}
 
 		return array_merge( $current, $clean );

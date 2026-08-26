@@ -17,6 +17,7 @@ use Traveljabs\PostTypes\Vaccinations;
 use Traveljabs\Redirects\RedirectAdmin;
 use Traveljabs\Redirects\RedirectManager;
 use Traveljabs\Shortcodes\ClinicSearch;
+use Traveljabs\Shortcodes\ClinicSubmission;
 use Traveljabs\Shortcodes\DestinationSearch;
 
 defined( 'ABSPATH' ) || exit;
@@ -110,6 +111,13 @@ final class Plugin {
 	 */
 	private ClinicSearch $clinic_search;
 
+	/**
+	 * Frontend clinic submission shortcode module.
+	 *
+	 * @var ClinicSubmission
+	 */
+	private ClinicSubmission $clinic_submission;
+
 
 	/**
 	 * Private constructor. Use instance().
@@ -146,6 +154,7 @@ final class Plugin {
 		$this->redirect_admin   = new RedirectAdmin( $this->redirect_manager );
 		$this->destination_search = new DestinationSearch();
 		$this->clinic_search    = new ClinicSearch();
+		$this->clinic_submission = new ClinicSubmission();
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}

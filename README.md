@@ -78,6 +78,8 @@ The Google Maps API key is stored in its own settings section and sanitized with
 
 The clinic finder is available with the `[search-clinic]` shortcode. It displays the clinic search, clinic list, distance sorting, and Google Map using the API key configured in Traveljabs Settings.
 
+The frontend clinic submission form is available with `[clinic_submission]`. Configure WooCommerce products for the Bronze, Silver, and Gold packages, then enter their product IDs and the package purchase URL in Traveljabs Settings. Completed or processing orders grant the highest matching package limit (1, 2, or 3 clinics).
+
 ## Custom Fields
 
 Custom field groups are registered as native meta boxes (no ACF dependency). The `Clinic Details` group (`group_clinic_details`) attaches to the `clinic` post type:
