@@ -145,6 +145,13 @@ final class Settings {
 			array( $this, 'render_destination_search_section_description' ),
 			self::PAGE_SLUG
 		);
+
+		add_settings_section(
+			'clinic_search_section',
+			__( 'Clinic Search Shortcode', 'traveljabs' ),
+			array( $this, 'render_clinic_search_section_description' ),
+			self::PAGE_SLUG
+		);
 	}
 
 	/**
@@ -190,6 +197,16 @@ final class Settings {
 	public function render_destination_search_section_description(): void {
 		echo '<p class="description">' . esc_html__( 'Add the following shortcode to any page or post to display a destination search field:', 'traveljabs' ) . '</p>';
 		echo '<code>' . esc_html( '[search-destination]' ) . '</code>';
+	}
+
+	/**
+	 * Explains how to use the clinic search shortcode.
+	 *
+	 * @return void
+	 */
+	public function render_clinic_search_section_description(): void {
+		echo '<p class="description">' . esc_html__( 'Add the following shortcode to any page or post to display the clinic search, clinic list, and Google Map:', 'traveljabs' ) . '</p>';
+		echo '<code>' . esc_html( '[search-clinic]' ) . '</code>';
 	}
 
 	/**

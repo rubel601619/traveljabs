@@ -76,6 +76,8 @@ Stored in the single option `traveljabs_settings`:
 
 The Google Maps API key is stored in its own settings section and sanitized with `sanitize_text_field()`. Slugs are sanitized with `sanitize_title()`; empty values fall back to defaults. Rewrite rules are flushed only on activation, deactivation, or an actual slug change — never on every request.
 
+The clinic finder is available with the `[search-clinic]` shortcode. It displays the clinic search, clinic list, distance sorting, and Google Map using the API key configured in Traveljabs Settings.
+
 ## Custom Fields
 
 Custom field groups are registered as native meta boxes (no ACF dependency). The `Clinic Details` group (`group_clinic_details`) attaches to the `clinic` post type:
