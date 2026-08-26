@@ -195,8 +195,8 @@ final class Settings {
 	 * @return void
 	 */
 	public function render_destination_search_section_description(): void {
-		echo '<p class="description">' . esc_html__( 'Add the following shortcode to any page or post to display a destination search field:', 'traveljabs' ) . '</p>';
-		echo '<code>' . esc_html( '[search-destination]' ) . '</code>';
+		echo '<p class="description">' . esc_html__( 'Add the following shortcode to any page or post to display a destination search field. The text attribute controls the message shown above the search field:', 'traveljabs' ) . '</p>';
+		echo '<code>' . esc_html( '[search-destination text="Find out what vaccinations you may need for your trip"]' ) . '</code>';
 	}
 
 	/**
