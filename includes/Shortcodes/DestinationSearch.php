@@ -58,7 +58,9 @@ final class DestinationSearch {
 			)
 		);
 
-		return '<div class="traveljabs-destination-search">'
+		return '<div style="background: white;">'
+		    .'<div class="traveljabs-destination-text">Find out what vaccinations you may need for your trip</div>'
+		    .'<div class="traveljabs-destination-search">'
 			. '<label class="screen-reader-text">'
 			. esc_html__( 'Search the destination', 'traveljabs' )
 			. '</label>'
@@ -66,6 +68,7 @@ final class DestinationSearch {
 			. esc_attr__( 'Search the destination', 'traveljabs' )
 			. '" autocomplete="off" disabled>'
 			. '<ul class="traveljabs-destination-search__results" aria-live="polite"></ul>'
+			. '</div>'
 			. '</div>';
 	}
 }
