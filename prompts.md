@@ -1774,3 +1774,89 @@ After completing the implementation, provide a concise report containing:
 14. Any assumptions or issues.
 
 Do not stop at creating the admin interface. Implement the complete backend, database, automatic slug detection, manual CRUD, frontend redirect processing, validation, and security.
+==============================
+
+## Traveljabs — Clinic CPT Single Page Prompt
+
+Create a professional **single page template** for the existing `clinic` custom post type in the Traveljabs WordPress plugin.
+
+Requirements:
+
+* Use the existing `clinic` CPT; do not register a duplicate CPT.
+* Create `single-clinic.php` using the existing plugin template architecture.
+* Use OOP, namespaces, and Composer PSR-4 autoloading.
+* Load the template only for `is_singular('clinic')`.
+* Integrate with the active theme using `get_header()` and `get_footer()`.
+
+### Page Layout
+
+**Top section:**
+
+* Full/large featured image.
+* Clinic title as the primary `<h1>`.
+* Use the WordPress-generated permalink and post data.
+
+**Below section:**
+Create a responsive two-column layout:
+
+```text
+┌──────────────────────────────┬────────────────────┐
+│                              │                    │
+│       Clinic Content         │ Recent Clinics     │
+│                              │                    │
+│       the_content()          │ 1. Clinic          │
+│                              │ 2. Clinic          │
+│                              │ ...                │
+│                              │ 10. Clinic          │
+└──────────────────────────────┴────────────────────┘
+```
+
+### Left Column
+
+* Display the complete clinic content using `the_content()`.
+* Preserve WordPress blocks, images, links, and formatting.
+
+### Right Column
+
+* Display the **10 most recent published clinic posts**.
+* Exclude the currently viewed clinic.
+* Order by date descending.
+* Show featured image and clinic title.
+* Each item must link to its single clinic page.
+* Use a separate `WP_Query`.
+* Use `wp_reset_postdata()` after the query.
+
+### Responsive
+
+* Desktop: two columns.
+* Mobile: stack the sidebar below the main content.
+* Follow the existing Traveljabs CSS/design system.
+
+### Architecture
+
+Recommended structure:
+
+```text
+templates/
+├── single-clinic.php
+└── parts/
+    └── clinic-recent-item.php
+
+includes/
+└── PostTypes/
+    └── Clinic/
+        └── ClinicSingle.php
+```
+
+Add dedicated CSS only if required and load it only on clinic single pages.
+
+Ensure:
+
+* Proper escaping and sanitization.
+* One H1.
+* Accessible semantic HTML.
+* Internationalization using the `traveljabs` text domain.
+* No manual `require_once` for classes.
+* Existing Clinic CPT, archive, Vaccination pages, and other Traveljabs functionality remain unaffected.
+
+After implementation, verify the single clinic page, featured image, content, recent 10 clinics, current-post exclusion, responsive layout, and Composer autoloading.
