@@ -35,6 +35,7 @@ final class Settings {
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'register_submenu' ), 20 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_notices', array( $this, 'render_update_notice' ) );
 		add_action( 'update_option_' . self::OPTION_KEY, array( $this, 'maybe_flush_rewrite_rules' ), 10, 2 );
 	}
 
@@ -207,6 +208,25 @@ final class Settings {
 	public function render_clinic_search_section_description(): void {
 		echo '<p class="description">' . esc_html__( 'Add the following shortcode to any page or post to display the clinic search, clinic list, and Google Map:', 'traveljabs' ) . '</p>';
 		echo '<code>' . esc_html( '[search-clinic]' ) . '</code>';
+	}
+
+	/**
+	 * Displays a dismissible notice after settings are saved successfully.
+	 *
+	 * @return void
+	 */
+	public function render_update_notice(): void {
+		$page            = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		$settings_updated = isset( $_GET['settings-updated'] ) ? sanitize_key( wp_unslash( $_GET['settings-updated'] ) ) : '';
+
+		if ( self::PAGE_SLUG !== $page || ! in_array( $settings_updated, array( 'true', '1' ), true ) || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+			esc_html__( 'Traveljabs settings saved successfully.', 'traveljabs' )
+		);
 	}
 
 	/**
