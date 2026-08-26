@@ -101,6 +101,7 @@ final class PackageService {
 			)
 		);
 		$active = null;
+		$active_limit = 0;
 
 		foreach ( $orders as $order ) {
 			foreach ( $order->get_items( 'line_item' ) as $item ) {
@@ -116,13 +117,16 @@ final class PackageService {
 					continue;
 				}
 
-				if ( null === $active || $packages[ $key ]['limit'] > $active['limit'] ) {
+				$package_limit = (int) $packages[ $key ]['limit'];
+
+				if ( $package_limit > $active_limit ) {
 					$active = array(
 						'key'        => $key,
 						'label'      => $packages[ $key ]['label'],
-						'limit'      => (int) $packages[ $key ]['limit'],
+						'limit'      => $package_limit,
 						'product_id' => $product_id,
 					);
+					$active_limit = $package_limit;
 				}
 			}
 		}
