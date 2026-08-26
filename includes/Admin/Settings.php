@@ -127,17 +127,24 @@ final class Settings {
 
 		foreach ( self::get_google_maps_fields() as $key => $default ) {
 			add_settings_field(
-			$key,
-			$this->get_field_label( $key ),
-			array( $this, 'render_google_maps_field' ),
-			self::PAGE_SLUG,
-			'google_maps_section',
-			array(
-				'setting_key' => $key,
-				'default'     => $default,
-			)
+				$key,
+				$this->get_field_label( $key ),
+				array( $this, 'render_google_maps_field' ),
+				self::PAGE_SLUG,
+				'google_maps_section',
+				array(
+					'setting_key' => $key,
+					'default'     => $default,
+				)
 			);
 		}
+
+		add_settings_section(
+			'destination_search_section',
+			__( 'Destination Search Shortcode', 'traveljabs' ),
+			array( $this, 'render_destination_search_section_description' ),
+			self::PAGE_SLUG
+		);
 	}
 
 	/**
@@ -173,6 +180,16 @@ final class Settings {
 	 */
 	public function render_google_maps_section_description(): void {
 		echo '<p class="description">' . esc_html__( 'Configure the Google Maps API key used by Traveljabs map features.', 'traveljabs' ) . '</p>';
+	}
+
+	/**
+	 * Explains how to use the destination search shortcode.
+	 *
+	 * @return void
+	 */
+	public function render_destination_search_section_description(): void {
+		echo '<p class="description">' . esc_html__( 'Add the following shortcode to any page or post to display a destination search field:', 'traveljabs' ) . '</p>';
+		echo '<code>' . esc_html( '[search-destination]' ) . '</code>';
 	}
 
 	/**
