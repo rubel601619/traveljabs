@@ -1,3 +1,9 @@
+:root{
+    --tbj-color: #0073aa;
+}
+.clinic-layout.traveljabs-clinic-search {
+    padding-block: 30px;
+}
 .clinic-layout {
 	display: flex;
 	gap: 30px;
@@ -25,22 +31,28 @@
 	width: 100%;
 	padding: 12px 16px;
 	font-size: 15px;
-	border: 2px solid #e0e0e0;
+	border: 2px solid var(--tbj-color) !important;
 	border-radius: 8px;
-	margin-bottom: 20px;
 	transition: border-color 0.2s;
 }
 
 .clinic-search-input:focus {
 	outline: none;
-	border-color: #0073aa;
+	border-color: var(--tbj-color);
+    background-color: hsl(215, 55%, 97%);
+    color: var(--tbj-color);
 }
 
 .clinic-search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 42.5px;
 	padding: 12px 20px;
+    margin-left: 8px;
 	border: 0;
 	border-radius: 8px;
-	background: #0073aa;
+	background: var(--tbj-color);
 	color: #fff;
 	cursor: pointer;
 }
@@ -48,6 +60,12 @@
 .clinic-search-btn:hover,
 .clinic-search-btn:focus {
 	background: #005f8d;
+}
+
+@media(min-width: 992px){
+    .clinic-search-btn{
+        display: none;
+    }
 }
 
 .clinic-list {
@@ -172,4 +190,9 @@
 	.clinic-list {
 		max-height: 400px;
 	}
+}
+
+.clinic-search-wrap{
+    display: flex;
+    align-items: center;
 }
