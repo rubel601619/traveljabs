@@ -70,10 +70,11 @@ Stored in the single option `traveljabs_settings`:
     'destinations_slug' => 'destinations',
     'our_clinic_slug'   => 'our-clinic',
     'vaccination_slug'  => 'vaccination',
+    'google_maps_api_key' => '',
 ]
 ```
 
-Slugs are sanitized with `sanitize_title()`; empty values fall back to defaults. Rewrite rules are flushed only on activation, deactivation, or an actual slug change — never on every request.
+The Google Maps API key is stored in its own settings section and sanitized with `sanitize_text_field()`. Slugs are sanitized with `sanitize_title()`; empty values fall back to defaults. Rewrite rules are flushed only on activation, deactivation, or an actual slug change — never on every request.
 
 ## Custom Fields
 

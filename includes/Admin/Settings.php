@@ -52,6 +52,17 @@ final class Settings {
 	}
 
 	/**
+	 * Returns the Google Maps settings fields mapped to their defaults.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function get_google_maps_fields(): array {
+		return array(
+			'google_maps_api_key' => '',
+		);
+	}
+
+	/**
 	 * Adds the Settings submenu under the Traveljabs top-level menu.
 	 *
 	 * Priority 20 places it after the custom post type submenus that core
@@ -106,6 +117,27 @@ final class Settings {
 				)
 			);
 		}
+
+		add_settings_section(
+			'google_maps_section',
+			__( 'Google Maps Settings', 'traveljabs' ),
+			array( $this, 'render_google_maps_section_description' ),
+			self::PAGE_SLUG
+		);
+
+		foreach ( self::get_google_maps_fields() as $key => $default ) {
+			add_settings_field(
+			$key,
+			$this->get_field_label( $key ),
+			array( $this, 'render_google_maps_field' ),
+			self::PAGE_SLUG,
+			'google_maps_section',
+			array(
+				'setting_key' => $key,
+				'default'     => $default,
+			)
+			);
+		}
 	}
 
 	/**
@@ -119,6 +151,7 @@ final class Settings {
 			'destinations_slug' => __( 'Destinations Slug', 'traveljabs' ),
 			'our_clinic_slug'   => __( 'Our Clinics Slug', 'traveljabs' ),
 			'vaccination_slug'  => __( 'Vaccination Slug', 'traveljabs' ),
+			'google_maps_api_key' => __( 'Google Maps API Key', 'traveljabs' ),
 		);
 
 		return isset( $labels[ $key ] ) ? $labels[ $key ] : '';
@@ -131,6 +164,15 @@ final class Settings {
 	 */
 	public function render_section_description(): void {
 		echo '<p class="description">' . esc_html__( 'Configure the frontend rewrite slugs for the custom post types. The internal post type keys never change.', 'traveljabs' ) . '</p>';
+	}
+
+	/**
+	 * Renders the Google Maps settings section description.
+	 *
+	 * @return void
+	 */
+	public function render_google_maps_section_description(): void {
+		echo '<p class="description">' . esc_html__( 'Configure the Google Maps API key used by Traveljabs map features.', 'traveljabs' ) . '</p>';
 	}
 
 	/**
@@ -156,6 +198,25 @@ final class Settings {
 	}
 
 	/**
+	 * Renders the Google Maps API key field.
+	 *
+	 * @param array<string, string> $args Field arguments.
+	 * @return void
+	 */
+	public function render_google_maps_field( array $args ): void {
+		$key     = isset( $args['setting_key'] ) ? (string) $args['setting_key'] : '';
+		$options = $this->get_options();
+		$value   = isset( $options[ $key ] ) ? (string) $options[ $key ] : '';
+
+		printf(
+			'<input type="text" id="%1$s" name="%2$s[%1$s]" value="%3$s" class="regular-text" autocomplete="off" />',
+			esc_attr( $key ),
+			esc_attr( self::OPTION_KEY ),
+			esc_attr( $value )
+		);
+	}
+
+	/**
 	 * Sanitizes the submitted settings.
 	 *
 	 * Slugs are normalized with sanitize_title(); empty values fall back to
@@ -173,6 +234,10 @@ final class Settings {
 			$raw           = isset( $input[ $key ] ) ? (string) $input[ $key ] : '';
 			$slug          = sanitize_title( $raw );
 			$clean[ $key ] = '' !== $slug ? $slug : $default;
+		}
+
+		foreach ( self::get_google_maps_fields() as $key => $default ) {
+			$clean[ $key ] = isset( $input[ $key ] ) ? sanitize_text_field( (string) $input[ $key ] ) : $default;
 		}
 
 		return array_merge( $current, $clean );
