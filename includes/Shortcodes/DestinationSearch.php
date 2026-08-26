@@ -67,10 +67,11 @@ final class DestinationSearch {
 			'traveljabs-destination-search',
 			'traveljabsDestinationSearch',
 			array(
-				'restUrl' => esc_url_raw( rest_url( 'wp/v2/destination' ) ),
-				'loadingText' => __( 'Loading destinations...', 'traveljabs' ),
-				'errorText' => __( 'Could not load destinations. Please try again.', 'traveljabs' ),
-				'notFoundText' => __( 'No destination found.', 'traveljabs' ),
+				'restUrl'          => esc_url_raw( rest_url( 'wp/v2/destination' ) ),
+				'loadingText'      => __( 'Loading destination...', 'traveljabs' ),
+				'placeholderText'  => __( 'Search the destination', 'traveljabs' ),
+				'errorText'        => __( 'Could not load destinations. Please try again.', 'traveljabs' ),
+				'notFoundText'     => __( 'No destination found.', 'traveljabs' ),
 			)
 		);
 
@@ -81,7 +82,7 @@ final class DestinationSearch {
 			. esc_html__( 'Search the destination', 'traveljabs' )
 			. '</label>'
 			. '<input type="search" class="traveljabs-destination-search__input" placeholder="'
-			. esc_attr__( 'Search the destination', 'traveljabs' )
+			. esc_attr__( 'Loading destination...', 'traveljabs' )
 			. '" autocomplete="off" disabled>'
 			. '<ul class="traveljabs-destination-search__results" aria-live="polite"></ul>'
 			. '</div>'

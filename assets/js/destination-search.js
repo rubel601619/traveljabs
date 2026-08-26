@@ -114,6 +114,7 @@
 			.then(function (items) {
 				destinations = items;
 				input.disabled = false;
+				input.placeholder = config.placeholderText || 'Search the destination';
 				input.addEventListener('input', filterDestinations);
 				results.innerHTML = '';
 			})
