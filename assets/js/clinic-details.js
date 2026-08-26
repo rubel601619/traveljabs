@@ -5,6 +5,15 @@
 	'use strict';
 
 	var CONTAINER_ID = 'traveljabs-clinic-opening-hours';
+	var DAYS = [
+		'Monday',
+		'Tuesday',
+		'Wednesday',
+		'Thursday',
+		'Friday',
+		'Saturday',
+		'Sunday'
+	];
 
 	function getContainer() {
 		return document.getElementById(CONTAINER_ID);
@@ -13,9 +22,27 @@
 	function addRow(container) {
 		var tbody = container.querySelector('tbody');
 		var template = container.querySelector('.traveljabs-hours-row.is-template');
+		var rows;
+		var previousDay = '';
+		var previousDayIndex;
+		var newDay = DAYS[0];
 
 		if (!tbody || !template) {
 			return;
+		}
+
+		rows = tbody.querySelectorAll('.traveljabs-hours-row:not(.is-template)');
+
+		if (rows.length) {
+			previousDay = rows[ rows.length - 1 ].querySelector('input[name*="[day]"]');
+			previousDay = previousDay ? previousDay.value.trim().toLowerCase() : '';
+			previousDayIndex = DAYS.map(function (day) {
+				return day.toLowerCase();
+			}).indexOf(previousDay);
+
+			if (previousDayIndex !== -1) {
+				newDay = DAYS[ ( previousDayIndex + 1 ) % DAYS.length ];
+			}
 		}
 
 		var row = template.cloneNode(true);
@@ -26,6 +53,12 @@
 		Array.prototype.forEach.call(row.querySelectorAll('input'), function (input) {
 			input.value = '';
 		});
+
+		var dayInput = row.querySelector('input[name*="[day]"]');
+
+		if (dayInput) {
+			dayInput.value = newDay;
+		}
 
 		tbody.insertBefore(row, template);
 
