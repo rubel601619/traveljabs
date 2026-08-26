@@ -22,6 +22,50 @@ abstract class AbstractPostType {
 	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_post_type' ) );
+		add_filter( 'manage_' . $this->get_key() . '_posts_columns', array( $this, 'add_author_column' ) );
+		add_action( 'manage_' . $this->get_key() . '_posts_custom_column', array( $this, 'render_author_column' ), 10, 2 );
+	}
+
+	/**
+	 * Adds the Author column to the post type list table.
+	 *
+	 * @param array<string, string> $columns Existing columns.
+	 * @return array<string, string>
+	 */
+	public function add_author_column( array $columns ): array {
+		if ( isset( $columns['author'] ) ) {
+			return $columns;
+		}
+
+		$updated = array();
+
+		foreach ( $columns as $key => $label ) {
+			$updated[ $key ] = $label;
+
+			if ( 'title' === $key ) {
+				$updated['author'] = __( 'Author', 'traveljabs' );
+			}
+		}
+
+		return $updated;
+	}
+
+	/**
+	 * Renders the Author column value.
+	 *
+	 * @param string $column  Current column name.
+	 * @param int    $post_id Current post ID.
+	 * @return void
+	 */
+	public function render_author_column( string $column, int $post_id ): void {
+		if ( 'author' !== $column ) {
+			return;
+		}
+
+		$author_id = (int) get_post_field( 'post_author', $post_id );
+		$author    = get_the_author_meta( 'display_name', $author_id );
+
+		echo esc_html( '' !== $author ? $author : __( 'Unknown', 'traveljabs' ) );
 	}
 
 	/**
