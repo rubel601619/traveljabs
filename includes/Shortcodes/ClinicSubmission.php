@@ -33,6 +33,16 @@ final class ClinicSubmission {
 	private const DELETE_ACTION = 'traveljabs_delete_clinic';
 
 	/**
+	 * Login action name.
+	 */
+	private const LOGIN_ACTION = 'traveljabs_clinic_login';
+
+	/**
+	 * Registration action name.
+	 */
+	private const REGISTER_ACTION = 'traveljabs_clinic_register';
+
+	/**
 	 * Submission token lifetime in seconds.
 	 */
 	private const TOKEN_TTL = HOUR_IN_SECONDS;
@@ -65,11 +75,21 @@ final class ClinicSubmission {
 		$action = isset( $_POST['traveljabs_clinic_action'] ) ? sanitize_key( wp_unslash( $_POST['traveljabs_clinic_action'] ) ) : '';
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Action is checked before nonce verification.
-		if ( ! in_array( $action, array( self::ACTION, self::DELETE_ACTION ), true ) ) {
+		if ( ! in_array( $action, array( self::ACTION, self::DELETE_ACTION, self::LOGIN_ACTION, self::REGISTER_ACTION ), true ) ) {
 			return;
 		}
 
 		$redirect_to = isset( $_POST['traveljabs_redirect'] ) ? wp_validate_redirect( wp_unslash( $_POST['traveljabs_redirect'] ), home_url( '/' ) ) : home_url( '/' );
+
+		if ( self::LOGIN_ACTION === $action ) {
+			$this->process_login( $redirect_to );
+			return;
+		}
+
+		if ( self::REGISTER_ACTION === $action ) {
+			$this->process_registration( $redirect_to );
+			return;
+		}
 
 		if ( ! is_user_logged_in() ) {
 			$this->errors[] = __( 'You must be logged in to add a clinic.', 'traveljabs' );
@@ -177,7 +197,9 @@ final class ClinicSubmission {
 	 */
 	public function render(): string {
 		if ( ! is_user_logged_in() ) {
-			return $this->render_message( __( 'You must be logged in to add a clinic.', 'traveljabs' ), 'warning', wp_login_url( $this->current_url() ) );
+			wp_enqueue_style( 'traveljabs-clinic-submission', TRAVELJABS_URL . 'assets/css/clinic-submission.css', array(), (string) filemtime( TRAVELJABS_PATH . 'assets/css/clinic-submission.css' ) );
+			wp_enqueue_script( 'traveljabs-clinic-submission', TRAVELJABS_URL . 'assets/js/clinic-submission.js', array( 'jquery' ), (string) filemtime( TRAVELJABS_PATH . 'assets/js/clinic-submission.js' ), true );
+			return $this->render_auth_forms();
 		}
 
 		$user_id = get_current_user_id();
@@ -200,7 +222,16 @@ final class ClinicSubmission {
 
 		$count = $this->count_user_clinics( $user_id );
 		$output = '<div class="traveljabs-clinic-submission">';
-		$output .= '<div class="traveljabs-clinic-submission__summary"><strong>' . esc_html__( 'Your Package:', 'traveljabs' ) . '</strong> ' . esc_html( $package['label'] ) . '<br><strong>' . esc_html__( 'Clinic Usage:', 'traveljabs' ) . '</strong> ' . esc_html( $count . ' / ' . $package['limit'] ) . '<br><strong>' . esc_html__( 'Remaining Clinics:', 'traveljabs' ) . '</strong> ' . esc_html( max( 0, (int) $package['limit'] - $count ) ) . '</div>';
+		$output .= '<div class="traveljabs-clinic-submission__summary"><strong>' . esc_html__( 'Your Package:', 'traveljabs' ) . '</strong> ' . esc_html( $package['label'] ) . '<br><strong>' . esc_html__( 'Clinic Usage:', 'traveljabs' ) . '</strong> ' . esc_html( $count . ' / ' . $package['limit'] ) . '<br><strong>' . esc_html__( 'Remaining Clinics:', 'traveljabs' ) . '</strong> ' . esc_html( max( 0, (int) $package['limit'] - $count ) );
+		$package_services = PackageService::get_services();
+		if ( isset( $package_services[ $package['key'] ] ) ) {
+			$output .= '<br><strong>' . esc_html__( 'Included Services:', 'traveljabs' ) . '</strong><ul>';
+			foreach ( $package_services[ $package['key'] ] as $service ) {
+				$output .= '<li>' . esc_html( $service ) . '</li>';
+			}
+			$output .= '</ul>';
+		}
+		$output .= '</div>';
 		$output .= $this->render_status();
 		$output .= $this->render_owned_clinics( $user_id );
 
@@ -248,6 +279,159 @@ final class ClinicSubmission {
 		</div>
 		<?php
 		return $output . ob_get_clean() . '</div>';
+	}
+
+	/**
+	 * Authenticates a visitor from the shortcode login form.
+	 *
+	 * @param string $redirect_to Safe redirect destination.
+	 * @return void
+	 */
+	private function process_login( string $redirect_to ): void {
+		$nonce = isset( $_POST['traveljabs_login_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['traveljabs_login_nonce'] ) ) : '';
+
+		if ( ! wp_verify_nonce( $nonce, self::LOGIN_ACTION ) ) {
+			$this->errors[] = __( 'Your session expired. Please refresh the page and try again.', 'traveljabs' );
+			return;
+		}
+
+		$credentials = array(
+			'user_login'    => sanitize_text_field( $this->posted_value( 'traveljabs_login_email' ) ),
+			'user_password' => $this->posted_value( 'traveljabs_login_password' ),
+			'remember'      => true,
+		);
+		$user = wp_signon( $credentials, is_ssl() );
+
+		if ( is_wp_error( $user ) ) {
+			$this->errors[] = __( 'The email or password is incorrect.', 'traveljabs' );
+			return;
+		}
+
+		wp_safe_redirect( $redirect_to );
+		exit;
+	}
+
+	/**
+	 * Registers and automatically authenticates a customer from the shortcode.
+	 *
+	 * @param string $redirect_to Safe redirect destination.
+	 * @return void
+	 */
+	private function process_registration( string $redirect_to ): void {
+		$nonce = isset( $_POST['traveljabs_register_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['traveljabs_register_nonce'] ) ) : '';
+
+		if ( ! wp_verify_nonce( $nonce, self::REGISTER_ACTION ) ) {
+			$this->errors[] = __( 'Your session expired. Please refresh the page and try again.', 'traveljabs' );
+			return;
+		}
+
+		$email            = sanitize_email( $this->posted_value( 'traveljabs_register_email' ) );
+		$password         = $this->posted_value( 'traveljabs_register_password' );
+		$confirm_password = $this->posted_value( 'traveljabs_register_confirm_password' );
+
+		if ( ! is_email( $email ) ) {
+			$this->errors[] = __( 'Please enter a valid email address.', 'traveljabs' );
+		} elseif ( email_exists( $email ) ) {
+			$this->errors[] = __( 'An account with this email address already exists.', 'traveljabs' );
+		}
+
+		if ( '' === $password ) {
+			$this->errors[] = __( 'Please enter a password.', 'traveljabs' );
+		} elseif ( $password !== $confirm_password ) {
+			$this->errors[] = __( 'The passwords do not match.', 'traveljabs' );
+		}
+
+		if ( ! empty( $this->errors ) ) {
+			return;
+		}
+
+		$user_login = $this->unique_login_from_email( $email );
+		$user_id    = wp_insert_user(
+			array(
+				'user_login' => $user_login,
+				'user_pass'  => $password,
+				'user_email' => $email,
+				'role'       => 'customer',
+			)
+		);
+
+		if ( is_wp_error( $user_id ) ) {
+			$this->errors[] = __( 'Your account could not be created. Please try again.', 'traveljabs' );
+			return;
+		}
+
+		wp_set_current_user( $user_id );
+		wp_set_auth_cookie( $user_id, true, is_ssl() );
+		wp_safe_redirect( $redirect_to );
+		exit;
+	}
+
+	/**
+	 * Builds a unique WordPress username without exposing a role selector.
+	 *
+	 * @param string $email Registration email.
+	 * @return string
+	 */
+	private function unique_login_from_email( string $email ): string {
+		$parts = explode( '@', $email );
+		$login = sanitize_user( $parts[0], true );
+		$login = '' !== $login ? $login : 'customer';
+		$base  = $login;
+		$count = 1;
+
+		while ( username_exists( $login ) ) {
+			$login = $base . $count;
+			$count++;
+		}
+
+		return $login;
+	}
+
+	/**
+	 * Renders login and customer registration forms for visitors.
+	 *
+	 * @return string
+	 */
+	private function render_auth_forms(): string {
+		$auth_mode     = isset( $_GET['traveljabs_auth'] ) ? sanitize_key( wp_unslash( $_GET['traveljabs_auth'] ) ) : '';
+		$show_register = 'register' === $auth_mode || self::REGISTER_ACTION === sanitize_key( $this->posted_value( 'traveljabs_clinic_action' ) );
+		$login_url     = remove_query_arg( 'traveljabs_auth', $this->current_url() );
+		$register_url  = add_query_arg( 'traveljabs_auth', 'register', $login_url );
+
+		ob_start();
+		?>
+		<div class="traveljabs-clinic-submission__auth">
+			<?php if ( ! empty( $this->errors ) ) : ?>
+				<div class="traveljabs-clinic-submission__errors" role="alert"><ul><?php foreach ( $this->errors as $error ) : ?><li><?php echo esc_html( $error ); ?></li><?php endforeach; ?></ul></div>
+			<?php endif; ?>
+			<div id="traveljabs-login-panel" class="traveljabs-clinic-submission__form-wrap traveljabs-clinic-submission__auth-panel" data-auth-panel="login"<?php echo $show_register ? ' hidden' : ''; ?>>
+				<h2><?php echo esc_html__( 'Log In', 'traveljabs' ); ?></h2>
+				<form method="post" class="traveljabs-clinic-submission__form">
+					<input type="hidden" name="traveljabs_clinic_action" value="<?php echo esc_attr( self::LOGIN_ACTION ); ?>">
+					<input type="hidden" name="traveljabs_login_nonce" value="<?php echo esc_attr( wp_create_nonce( self::LOGIN_ACTION ) ); ?>">
+					<input type="hidden" name="traveljabs_redirect" value="<?php echo esc_url( $this->current_url() ); ?>">
+					<p><label for="traveljabs-login-email"><?php echo esc_html__( 'Email', 'traveljabs' ); ?></label><input required type="email" id="traveljabs-login-email" name="traveljabs_login_email" value="<?php echo esc_attr( $this->form_value( 'traveljabs_login_email' ) ); ?>"></p>
+					<p><label for="traveljabs-login-password"><?php echo esc_html__( 'Password', 'traveljabs' ); ?></label><input required type="password" id="traveljabs-login-password" name="traveljabs_login_password"></p>
+					<p><button type="submit" class="button button-primary"><?php echo esc_html__( 'Log In', 'traveljabs' ); ?></button></p>
+				</form>
+				<p><a class="button-link traveljabs-auth-toggle" href="<?php echo esc_url( $register_url ); ?>" data-auth-show="register" aria-controls="traveljabs-register-panel"><?php echo esc_html__( 'Register', 'traveljabs' ); ?></a></p>
+			</div>
+			<div id="traveljabs-register-panel" class="traveljabs-clinic-submission__form-wrap traveljabs-clinic-submission__auth-panel" data-auth-panel="register"<?php echo ! $show_register ? ' hidden' : ''; ?>>
+				<h2><?php echo esc_html__( 'Create an Account', 'traveljabs' ); ?></h2>
+				<form method="post" class="traveljabs-clinic-submission__form">
+					<input type="hidden" name="traveljabs_clinic_action" value="<?php echo esc_attr( self::REGISTER_ACTION ); ?>">
+					<input type="hidden" name="traveljabs_register_nonce" value="<?php echo esc_attr( wp_create_nonce( self::REGISTER_ACTION ) ); ?>">
+					<input type="hidden" name="traveljabs_redirect" value="<?php echo esc_url( $this->current_url() ); ?>">
+					<p><label for="traveljabs-register-email"><?php echo esc_html__( 'Email', 'traveljabs' ); ?></label><input required type="email" id="traveljabs-register-email" name="traveljabs_register_email" value="<?php echo esc_attr( $this->form_value( 'traveljabs_register_email' ) ); ?>"></p>
+					<p><label for="traveljabs-register-password"><?php echo esc_html__( 'Password', 'traveljabs' ); ?></label><input required type="password" id="traveljabs-register-password" name="traveljabs_register_password"></p>
+					<p><label for="traveljabs-register-confirm-password"><?php echo esc_html__( 'Confirm Password', 'traveljabs' ); ?></label><input required type="password" id="traveljabs-register-confirm-password" name="traveljabs_register_confirm_password"></p>
+					<p><button type="submit" class="button button-primary"><?php echo esc_html__( 'Register', 'traveljabs' ); ?></button></p>
+				</form>
+				<p><a class="button-link traveljabs-auth-toggle" href="<?php echo esc_url( $login_url ); ?>" data-auth-show="login" aria-controls="traveljabs-login-panel"><?php echo esc_html__( 'Log In', 'traveljabs' ); ?></a></p>
+			</div>
+		</div>
+		<?php
+		return ob_get_clean();
 	}
 
 	/**

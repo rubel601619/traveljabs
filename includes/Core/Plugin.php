@@ -8,6 +8,8 @@
 namespace Traveljabs\Core;
 
 use Traveljabs\Admin\AdminMenu;
+
+use Traveljabs\Admin\PackageCustomers;
 use Traveljabs\Admin\Settings;
 use Traveljabs\Meta\ClinicDetails;
 use Traveljabs\PostTypes\Clinic\ClinicSingle;
@@ -40,6 +42,13 @@ final class Plugin {
 	 * @var AdminMenu
 	 */
 	private AdminMenu $admin_menu;
+
+	/**
+	 * Package customer report module.
+	 *
+	 * @var PackageCustomers
+	 */
+	private PackageCustomers $package_customers;
 
 	/**
 	 * Settings module.
@@ -144,6 +153,9 @@ final class Plugin {
 	 */
 	public function run(): void {
 		$this->admin_menu       = new AdminMenu();
+		if ( is_admin() ) {
+			$this->package_customers = new PackageCustomers();
+		}
 		$this->settings         = new Settings();
 		$this->destinations     = new Destinations();
 		$this->our_clinics      = new OurClinics();

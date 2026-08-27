@@ -7,6 +7,8 @@
 
 namespace Traveljabs\Admin;
 
+use Traveljabs\Commerce\PackageService;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -242,7 +244,21 @@ final class Settings {
 	 * @return void
 	 */
 	public function render_clinic_packages_section_description(): void {
-		echo '<p class="description">' . esc_html__( 'Enter the WooCommerce product IDs for the Bronze, Silver, and Gold clinic packages. Only processing or completed orders grant clinic capacity. Optionally enter the page where users can purchase or upgrade a package.', 'traveljabs' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Enter the WooCommerce product IDs for the Bronze, Silver, and Gold clinic packages. Users with a processing or completed order for a mapped product receive one clinic and the services shown below. Optionally enter the page where users can purchase or upgrade a package.', 'traveljabs' ) . '</p>';
+		echo '<table class="widefat striped" style="max-width: 900px; margin: 1rem 0 1.5rem;"><thead><tr><th>' . esc_html__( 'Package', 'traveljabs' ) . '</th><th>' . esc_html__( 'Clinic allowance', 'traveljabs' ) . '</th><th>' . esc_html__( 'Included services', 'traveljabs' ) . '</th></tr></thead><tbody>';
+
+	foreach ( PackageService::get_packages() as $key => $package ) {
+		$services = PackageService::get_services()[ $key ] ?? array();
+		echo '<tr><th scope="row">' . esc_html( $package['label'] ) . '</th><td>' . esc_html( sprintf( _n( '%d clinic', '%d clinics', (int) $package['limit'], 'traveljabs' ), (int) $package['limit'] ) ) . '</td><td><ul style="margin: 0; padding-left: 1.25rem;">';
+
+		foreach ( $services as $service ) {
+			echo '<li>' . esc_html( $service ) . '</li>';
+		}
+
+		echo '</ul></td></tr>';
+	}
+
+	echo '</tbody></table><p class="description">' . esc_html__( '* PPC and Premium SEO services are package inclusions for eligible customers and may require separate campaign onboarding.', 'traveljabs' ) . '</p>';
 	}
 
 	/**

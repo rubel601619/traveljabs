@@ -16,6 +16,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class PackageService {
 
+	public const ASSIGNMENTS_OPTION = 'traveljabs_package_assignments';
+
 	/**
 	 * Package definitions and their configured WooCommerce product settings.
 	 *
@@ -33,15 +35,57 @@ final class PackageService {
 			),
 			'silver' => array(
 				'label'      => __( 'Silver Package', 'traveljabs' ),
-				'limit'      => 2,
+				'limit'      => 1,
 				'product_id' => isset( $options['silver_product_id'] ) ? (int) $options['silver_product_id'] : 0,
 			),
 			'gold' => array(
 				'label'      => __( 'Gold Package', 'traveljabs' ),
-				'limit'      => 3,
+				'limit'      => 1,
 				'product_id' => isset( $options['gold_product_id'] ) ? (int) $options['gold_product_id'] : 0,
 			),
 		);
+	}
+
+	/**
+	 * Returns the services included with each package.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	public static function get_services(): array {
+		$standard = array(
+			__( 'Centralised Booking System', 'traveljabs' ),
+			__( 'Increased visibility', 'traveljabs' ),
+			__( 'Enhanced Credibility', 'traveljabs' ),
+			__( 'Improved SEO and Online Presence', 'traveljabs' ),
+		);
+
+		return array(
+			'bronze' => $standard,
+			'silver' => array_merge( $standard, array( __( 'PPC Marketing*', 'traveljabs' ) ) ),
+			'gold'   => array_merge( $standard, array( __( 'PPC Marketing*', 'traveljabs' ), __( 'Premium SEO Marketing*', 'traveljabs' ) ) ),
+		);
+	}
+
+	/** @return array<int, string> */
+	public static function get_manual_assignments(): array {
+		$assignments = get_option( self::ASSIGNMENTS_OPTION, array() );
+		return is_array( $assignments ) ? array_map( 'sanitize_key', $assignments ) : array();
+	}
+
+	/** @return bool */
+	public static function assign_package( int $user_id, string $package_key ): bool {
+		if ( $user_id <= 0 || ! isset( self::get_packages()[ $package_key ] ) ) return false;
+		$assignments = self::get_manual_assignments();
+		$assignments[ $user_id ] = $package_key;
+		return update_option( self::ASSIGNMENTS_OPTION, $assignments );
+	}
+
+	/** @return bool */
+	public static function remove_assignment( int $user_id ): bool {
+		$assignments = self::get_manual_assignments();
+		if ( ! isset( $assignments[ $user_id ] ) ) return false;
+		unset( $assignments[ $user_id ] );
+		return update_option( self::ASSIGNMENTS_OPTION, $assignments );
 	}
 
 	/**
@@ -72,6 +116,9 @@ final class PackageService {
 	 * @return array<string, int|string>|null
 	 */
 	public static function get_active_package( int $user_id ): ?array {
+		$manual_key = self::get_manual_assignments()[ $user_id ] ?? '';
+		if ( '' !== $manual_key ) return self::build_package( $manual_key );
+
 		if ( $user_id <= 0 || ! function_exists( 'wc_get_orders' ) ) {
 			return null;
 		}
@@ -101,7 +148,8 @@ final class PackageService {
 			)
 		);
 		$active = null;
-		$active_limit = 0;
+		$package_priority = array( 'bronze' => 1, 'silver' => 2, 'gold' => 3 );
+		$active_priority = 0;
 
 		foreach ( $orders as $order ) {
 			foreach ( $order->get_items( 'line_item' ) as $item ) {
@@ -119,18 +167,25 @@ final class PackageService {
 
 				$package_limit = (int) $packages[ $key ]['limit'];
 
-				if ( $package_limit > $active_limit ) {
+				if ( $package_priority[ $key ] > $active_priority ) {
 					$active = array(
 						'key'        => $key,
 						'label'      => $packages[ $key ]['label'],
 						'limit'      => $package_limit,
 						'product_id' => $product_id,
 					);
-					$active_limit = $package_limit;
+					$active_priority = $package_priority[ $key ];
 				}
 			}
 		}
 
 		return $active;
+	}
+
+	/** @return array<string, int|string>|null */
+	private static function build_package( string $key ): ?array {
+		$packages = self::get_packages();
+		if ( ! isset( $packages[ $key ] ) ) return null;
+		return array( 'key' => $key, 'label' => $packages[ $key ]['label'], 'limit' => (int) $packages[ $key ]['limit'], 'product_id' => (int) $packages[ $key ]['product_id'] );
 	}
 }
