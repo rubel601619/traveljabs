@@ -112,3 +112,13 @@
 
 	refreshState();
 })();
+
+document.addEventListener('change', function (event) {
+	if (!event.target.classList.contains('traveljabs-select-all')) {
+		return;
+	}
+
+	document.querySelectorAll('.traveljabs-redirects-list-form input[name="redirect_ids[]"]').forEach(function (checkbox) {
+		checkbox.checked = event.target.checked;
+	});
+});

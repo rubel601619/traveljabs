@@ -67,6 +67,7 @@ final class RedirectAdmin {
 		add_action( 'admin_post_traveljabs_store_redirects', array( $this, 'handle_store' ) );
 		add_action( 'admin_post_traveljabs_update_redirect', array( $this, 'handle_update' ) );
 		add_action( 'admin_post_traveljabs_delete_redirect', array( $this, 'handle_delete' ) );
+		add_action( 'admin_post_traveljabs_bulk_delete_redirects', array( $this, 'handle_bulk_delete' ) );
 		add_action( 'admin_post_traveljabs_toggle_redirect', array( $this, 'handle_toggle' ) );
 		add_action( 'admin_post_traveljabs_export_redirects', array( $this, 'handle_export' ) );
 		add_action( 'admin_post_traveljabs_import_redirects', array( $this, 'handle_import' ) );
@@ -250,9 +251,22 @@ final class RedirectAdmin {
 				</p>
 			</form>
 
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="traveljabs-redirects-list-form">
+				<input type="hidden" name="action" value="traveljabs_bulk_delete_redirects" />
+				<?php wp_nonce_field( 'traveljabs_bulk_delete_redirects', 'traveljabs_bulk_delete_redirects' ); ?>
+				<div class="tablenav top">
+					<div class="alignleft actions bulkactions">
+						<select name="bulk_action" aria-label="<?php echo esc_attr__( 'Bulk action', 'traveljabs' ); ?>">
+							<option value="-1"><?php echo esc_html__( 'Bulk actions', 'traveljabs' ); ?></option>
+							<option value="delete"><?php echo esc_html__( 'Delete permanently', 'traveljabs' ); ?></option>
+						</select>
+						<?php submit_button( __( 'Apply', 'traveljabs' ), 'action', 'submit', false ); ?>
+					</div>
+				</div>
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
+						<th scope="col" class="check-column"><input type="checkbox" class="traveljabs-select-all" aria-label="<?php echo esc_attr__( 'Select all redirects', 'traveljabs' ); ?>" /></th>
 						<th scope="col" class="col-id"><?php echo esc_html__( 'ID', 'traveljabs' ); ?></th>
 						<th scope="col"><?php echo esc_html__( 'Source', 'traveljabs' ); ?></th>
 						<th scope="col"><?php echo esc_html__( 'Target', 'traveljabs' ); ?></th>
@@ -266,12 +280,13 @@ final class RedirectAdmin {
 				<tbody>
 					<?php if ( empty( $list['rows'] ) ) : ?>
 						<tr>
-							<td colspan="8"><?php echo esc_html__( 'No redirects found.', 'traveljabs' ); ?></td>
+							<td colspan="9"><?php echo esc_html__( 'No redirects found.', 'traveljabs' ); ?></td>
 						</tr>
 					<?php else : ?>
 						<?php foreach ( $list['rows'] as $row ) : ?>
 							<?php $row_id = (int) $row['id']; ?>
 							<tr>
+								<th scope="row" class="check-column"><input type="checkbox" name="redirect_ids[]" value="<?php echo esc_attr( (string) $row_id ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Select redirect %d', 'traveljabs' ), $row_id ) ); ?>" /></th>
 								<td><?php echo esc_html( (string) $row_id ); ?></td>
 								<td><code class="traveljabs-path"><?php echo esc_html( (string) $row['source'] ); ?></code></td>
 								<td><code class="traveljabs-path"><?php echo esc_html( (string) $row['target'] ); ?></code></td>
@@ -297,6 +312,16 @@ final class RedirectAdmin {
 					<?php endif; ?>
 				</tbody>
 			</table>
+				<div class="tablenav bottom">
+					<div class="alignleft actions bulkactions">
+						<select name="bulk_action_bottom" aria-label="<?php echo esc_attr__( 'Bulk action', 'traveljabs' ); ?>">
+							<option value="-1"><?php echo esc_html__( 'Bulk actions', 'traveljabs' ); ?></option>
+							<option value="delete"><?php echo esc_html__( 'Delete permanently', 'traveljabs' ); ?></option>
+						</select>
+						<?php submit_button( __( 'Apply', 'traveljabs' ), 'action', 'submit', false ); ?>
+					</div>
+				</div>
+			</form>
 
 			<?php
 			if ( $list['pages'] > 1 ) {
@@ -414,6 +439,27 @@ final class RedirectAdmin {
 			$this->queue_notice( 'success', __( 'Redirect deleted.', 'traveljabs' ), array() );
 		}
 
+		wp_safe_redirect( $this->list_back_url() );
+		exit;
+	}
+
+	/**
+	 * Deletes selected redirect records in bulk.
+	 *
+	 * @return void
+	 */
+	public function handle_bulk_delete(): void {
+		$this->assert_capability();
+		check_admin_referer( 'traveljabs_bulk_delete_redirects', 'traveljabs_bulk_delete_redirects' );
+		$action = isset( $_POST['bulk_action'] ) && '-1' !== $_POST['bulk_action'] ? sanitize_key( wp_unslash( $_POST['bulk_action'] ) ) : ( isset( $_POST['bulk_action_bottom'] ) ? sanitize_key( wp_unslash( $_POST['bulk_action_bottom'] ) ) : '' );
+		$ids = isset( $_POST['redirect_ids'] ) && is_array( $_POST['redirect_ids'] ) ? array_map( 'absint', wp_unslash( $_POST['redirect_ids'] ) ) : array();
+		$deleted = 0;
+		if ( 'delete' === $action ) {
+			foreach ( array_unique( $ids ) as $id ) {
+				if ( $id > 0 && $this->repository->delete( $id ) ) ++$deleted;
+			}
+		}
+		$this->queue_notice( $deleted > 0 ? 'success' : 'warning', sprintf( _n( '%d redirect deleted.', '%d redirects deleted.', $deleted, 'traveljabs' ), $deleted ), array() );
 		wp_safe_redirect( $this->list_back_url() );
 		exit;
 	}
