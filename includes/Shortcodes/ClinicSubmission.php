@@ -59,7 +59,38 @@ final class ClinicSubmission {
 	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'process_submission' ) );
+		add_action( 'init', array( $this, 'ensure_customer_upload_capability' ) );
+		add_filter( 'user_has_cap', array( $this, 'grant_customer_upload_capability' ), 10, 4 );
 		add_shortcode( self::SHORTCODE, array( $this, 'render' ) );
+	}
+
+	/**
+	 * Grants upload access dynamically while WordPress checks media AJAX permissions.
+	 *
+	 * @param array<string, bool> $allcaps All capabilities for the user.
+	 * @param array<string, string> $caps Requested primitive capabilities.
+	 * @param array<int, mixed> $args Capability arguments.
+	 * @param \WP_User $user User being checked.
+	 * @return array<string, bool>
+	 */
+	public function grant_customer_upload_capability( array $allcaps, array $caps, array $args, \WP_User $user ): array {
+		if ( in_array( 'customer', (array) $user->roles, true ) ) {
+			$allcaps['upload_files'] = true;
+		}
+
+		return $allcaps;
+	}
+
+	/**
+	 * Allows customer accounts to use the frontend media uploader.
+	 *
+	 * @return void
+	 */
+	public function ensure_customer_upload_capability(): void {
+		$customer = get_role( 'customer' );
+		if ( $customer && ! $customer->has_cap( 'upload_files' ) ) {
+			$customer->add_cap( 'upload_files' );
+		}
 	}
 
 	/**
@@ -180,7 +211,10 @@ final class ClinicSubmission {
 			}
 
 			$this->save_meta( (int) $post_id, $values );
-			$this->set_featured_image( (int) $post_id, $values['featured_image'] );
+			$uploaded_image_id = $this->upload_featured_image( (int) $post_id );
+			if ( $uploaded_image_id > 0 ) {
+				$this->set_featured_image( (int) $post_id, $uploaded_image_id );
+			}
 			wp_set_post_tags( (int) $post_id, array( 'travel clinic' ), false );
 			delete_transient( 'traveljabs_clinic_submission_' . $token );
 			wp_safe_redirect( add_query_arg( 'traveljabs_clinic_status', $edit_id > 0 ? 'updated' : 'success', $redirect_to ) );
@@ -241,7 +275,6 @@ final class ClinicSubmission {
 
 		$token = wp_generate_uuid4();
 		set_transient( 'traveljabs_clinic_submission_' . $token, 1, self::TOKEN_TTL );
-		wp_enqueue_media();
 		wp_enqueue_editor();
 		wp_enqueue_style( 'traveljabs-clinic-submission', TRAVELJABS_URL . 'assets/css/clinic-submission.css', array(), TRAVELJABS_VERSION );
 		wp_enqueue_style( 'traveljabs-clinic-details', TRAVELJABS_URL . 'assets/css/clinic-details.css', array(), TRAVELJABS_VERSION );
@@ -256,7 +289,7 @@ final class ClinicSubmission {
 			<?php if ( ! empty( $this->errors ) ) : ?>
 				<div class="traveljabs-clinic-submission__errors" role="alert"><ul><?php foreach ( $this->errors as $error ) : ?><li><?php echo esc_html( $error ); ?></li><?php endforeach; ?></ul></div>
 			<?php endif; ?>
-			<form method="post" class="traveljabs-clinic-submission__form">
+			<form method="post" enctype="multipart/form-data" class="traveljabs-clinic-submission__form">
 				<input type="hidden" name="traveljabs_clinic_action" value="<?php echo esc_attr( self::ACTION ); ?>">
 				<input type="hidden" name="traveljabs_clinic_nonce" value="<?php echo esc_attr( wp_create_nonce( self::ACTION ) ); ?>">
 				<input type="hidden" name="traveljabs_clinic_token" value="<?php echo esc_attr( $token ); ?>">
@@ -264,8 +297,8 @@ final class ClinicSubmission {
 				<input type="hidden" name="traveljabs_redirect" value="<?php echo esc_url( $this->current_url() ); ?>">
 				<p><label for="traveljabs-clinic-title"><?php echo esc_html__( 'Clinic Name', 'traveljabs' ); ?></label><input required type="text" id="traveljabs-clinic-title" name="clinic_title" value="<?php echo esc_attr( $this->form_value( 'clinic_title', $form_post ? $form_post->post_title : '' ) ); ?>"></p>
 				<p><label for="traveljabs-clinic-content"><?php echo esc_html__( 'Description', 'traveljabs' ); ?></label><?php wp_editor( $this->form_value( 'clinic_content', $form_post ? $form_post->post_content : '' ), 'traveljabs_clinic_content', array( 'textarea_name' => 'clinic_content', 'media_buttons' => false, 'textarea_rows' => 8 ) ); ?></p>
-				<?php $image_id = $this->form_value( 'clinic_featured_image', $form_post ? (string) get_post_thumbnail_id( $form_post->ID ) : '' ); ?>
-				<p><label><?php echo esc_html__( 'Featured Image', 'traveljabs' ); ?></label><input type="hidden" name="clinic_featured_image" id="traveljabs-clinic-featured-image" value="<?php echo esc_attr( $image_id ); ?>"><button type="button" class="button traveljabs-select-image"><?php echo esc_html__( 'Select Image', 'traveljabs' ); ?></button><span class="traveljabs-selected-image"><?php echo esc_html( $image_id ? basename( (string) get_attached_file( (int) $image_id ) ) : '' ); ?></span></p>
+				<?php $image_url = $form_post ? wp_get_attachment_image_url( get_post_thumbnail_id( $form_post->ID ), 'medium' ) : ''; ?>
+				<p class="traveljabs-featured-image-field"><label for="traveljabs-clinic-featured-image-upload"><?php echo esc_html__( 'Featured Image', 'traveljabs' ); ?></label><input type="file" name="clinic_featured_image_upload" id="traveljabs-clinic-featured-image-upload" class="traveljabs-clinic-featured-image-upload" accept="image/jpeg,image/png,image/gif,image/webp"><img class="traveljabs-featured-image-preview<?php echo $image_url ? '' : ' is-empty'; ?>" src="<?php echo esc_url( $image_url ?: '' ); ?>" alt="<?php echo esc_attr__( 'Featured image preview', 'traveljabs' ); ?>"></p>
 				<?php $this->render_field( 'clinic_address', __( 'Address', 'traveljabs' ), 'text', true, '', '', '1', $form_post ); ?>
 				<?php $this->render_field( 'clinic_postcode', __( 'Postcode', 'traveljabs' ), 'text', true, '', '', '1', $form_post ); ?>
 				<?php $this->render_field( 'clinic_phone', __( 'Phone', 'traveljabs' ), 'text', false, '', '', '1', $form_post ); ?>
@@ -600,14 +633,36 @@ final class ClinicSubmission {
 	}
 
 	/**
-	 * Sets a selected image as featured image when the user can edit it.
+	 * Uploads the optional image submitted with the clinic form.
+	 *
+	 * @param int $post_id Clinic ID.
+	 * @return int Attachment ID, or zero when no valid upload was submitted.
+	 */
+	private function upload_featured_image( int $post_id ): int {
+		if ( empty( $_FILES['clinic_featured_image_upload']['name'] ) ) {
+			return 0;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$attachment_id = media_handle_upload( 'clinic_featured_image_upload', $post_id );
+		return is_wp_error( $attachment_id ) ? 0 : (int) $attachment_id;
+	}
+
+	/**
+	 * Sets a selected media-library image as the clinic featured image.
 	 *
 	 * @param int $post_id  Clinic ID.
 	 * @param int $image_id Attachment ID.
 	 * @return void
 	 */
 	private function set_featured_image( int $post_id, int $image_id ): void {
-		if ( $image_id > 0 && wp_attachment_is_image( $image_id ) && current_user_can( 'edit_post', $image_id ) ) set_post_thumbnail( $post_id, $image_id );
+		$attachment = $image_id > 0 ? get_post( $image_id ) : null;
+		$can_use_image = $attachment instanceof \WP_Post && 'attachment' === $attachment->post_type;
+
+		if ( $can_use_image && wp_attachment_is_image( $image_id ) ) set_post_thumbnail( $post_id, $image_id );
 	}
 
 	/**

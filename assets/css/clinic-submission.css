@@ -58,6 +58,17 @@
 	margin-left: 0.75rem;
 }
 
+.traveljabs-featured-image-preview {
+	display: block;
+	width: 250px;
+	height: auto;
+	margin-top: 0.75rem;
+}
+
+.traveljabs-featured-image-preview.is-empty {
+	display: none;
+}
+
 .traveljabs-clinic-submission__owned {
 	margin: 0 0 2rem;
 }

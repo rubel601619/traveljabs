@@ -1,24 +1,28 @@
 (function ($) {
 	'use strict';
 
-	$(document).on('click', '.traveljabs-select-image', function (event) {
-		event.preventDefault();
+	$(document).on('change', '.traveljabs-clinic-featured-image-upload', function () {
+		var input = this;
+		var preview = input.closest('.traveljabs-featured-image-field').querySelector('.traveljabs-featured-image-preview');
 
-		var button = $(this);
-		var frame = wp.media({
-			title: button.data('title') || 'Select clinic image',
-			button: { text: 'Use this image' },
-			multiple: false,
-			type: 'image'
-		});
+		if (!preview || !input.files || !input.files[0]) {
+			return;
+		}
 
-		frame.on('select', function () {
-			var attachment = frame.state().get('selection').first().toJSON();
-			$('#traveljabs-clinic-featured-image').val(attachment.id);
-			button.siblings('.traveljabs-selected-image').text(attachment.filename || attachment.url);
-		});
+		preview.src = '';
+		preview.classList.add('is-empty');
 
-		frame.open();
+		var selectedFile = input.files[0];
+		var reader = new FileReader();
+		reader.onload = function (event) {
+			if (input.files[0] !== selectedFile) {
+				return;
+			}
+
+			preview.src = event.target.result;
+			preview.classList.remove('is-empty');
+		};
+		reader.readAsDataURL(selectedFile);
 	});
 
 	$(document).on('submit', '.traveljabs-clinic-submission__form', function () {
