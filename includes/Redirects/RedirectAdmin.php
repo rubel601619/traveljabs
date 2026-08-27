@@ -68,6 +68,8 @@ final class RedirectAdmin {
 		add_action( 'admin_post_traveljabs_update_redirect', array( $this, 'handle_update' ) );
 		add_action( 'admin_post_traveljabs_delete_redirect', array( $this, 'handle_delete' ) );
 		add_action( 'admin_post_traveljabs_toggle_redirect', array( $this, 'handle_toggle' ) );
+		add_action( 'admin_post_traveljabs_export_redirects', array( $this, 'handle_export' ) );
+		add_action( 'admin_post_traveljabs_import_redirects', array( $this, 'handle_import' ) );
 	}
 
 	/**
@@ -166,6 +168,20 @@ final class RedirectAdmin {
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 			<?php $this->render_notices(); ?>
+
+			<p>
+				<a class="button" href="<?php echo esc_url( $this->action_url( 'traveljabs_export_redirects' ) ); ?>"><?php echo esc_html__( 'Export Redirects', 'traveljabs' ); ?></a>
+			</p>
+			<div class="card traveljabs-redirect-import-card">
+				<h2><?php echo esc_html__( 'Import Redirects', 'traveljabs' ); ?></h2>
+				<p><?php echo esc_html__( 'Upload a CSV file exported from Excel. Required columns: source, target, status_code, is_active.', 'traveljabs' ); ?></p>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+					<input type="hidden" name="action" value="traveljabs_import_redirects" />
+					<?php wp_nonce_field( 'traveljabs_import_redirects', 'traveljabs_import_redirects' ); ?>
+					<input type="file" name="traveljabs_redirect_file" accept=".csv,text/csv" required />
+					<?php submit_button( __( 'Import CSV', 'traveljabs' ), 'secondary', 'submit', false ); ?>
+				</form>
+			</div>
 
 			<div class="card traveljabs-redirect-form-card">
 				<h2><?php echo esc_html( $editing ? __( 'Edit Redirect', 'traveljabs' ) : __( 'Add Redirect', 'traveljabs' ) ); ?></h2>
@@ -434,6 +450,73 @@ final class RedirectAdmin {
 		exit;
 	}
 
+	/**
+	 * Downloads all redirects as an Excel-compatible CSV file.
+	 *
+	 * @return void
+	 */
+	public function handle_export(): void {
+		$this->assert_capability();
+		check_admin_referer( 'traveljabs_export_redirects' );
+		$list = $this->repository->paginate( array( 'status' => 'all', 'paged' => 1, 'per_page' => 100 ) );
+		while ( count( $list['rows'] ) < $list['total'] ) {
+			$next_page = (int) ( count( $list['rows'] ) / 100 ) + 1;
+			$next = $this->repository->paginate( array( 'status' => 'all', 'paged' => $next_page, 'per_page' => 100 ) );
+			$list['rows'] = array_merge( $list['rows'], $next['rows'] );
+		}
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=traveljabs-redirects-' . gmdate( 'Y-m-d' ) . '.csv' );
+		$output = fopen( 'php://output', 'w' );
+		fwrite( $output, "\xEF\xBB\xBF" );
+		fputcsv( $output, array( 'id', 'source', 'target', 'status_code', 'is_active', 'origin', 'created_at', 'updated_at' ) );
+		foreach ( $list['rows'] as $row ) fputcsv( $output, array( $row['id'], $row['source'], $row['target'], $row['status_code'], $row['is_active'], $row['origin'], $row['created_at'], $row['updated_at'] ) );
+		fclose( $output );
+		exit;
+	}
+
+	/**
+	 * Imports validated redirect rows from an Excel-compatible CSV file.
+	 *
+	 * @return void
+	 */
+	public function handle_import(): void {
+		$this->assert_capability();
+		check_admin_referer( 'traveljabs_import_redirects', 'traveljabs_import_redirects' );
+		$file = isset( $_FILES['traveljabs_redirect_file'] ) && is_array( $_FILES['traveljabs_redirect_file'] ) ? $_FILES['traveljabs_redirect_file'] : array();
+		$filename = isset( $file['name'] ) ? sanitize_file_name( wp_unslash( $file['name'] ) ) : '';
+		$extension = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+		if ( empty( $file['tmp_name'] ) || ! empty( $file['error'] ) || 'csv' !== $extension || ! is_uploaded_file( $file['tmp_name'] ) ) {
+			$this->queue_notice( 'error', __( 'Please upload a valid CSV file.', 'traveljabs' ), array() );
+			wp_safe_redirect( $this->page_url() );
+			exit;
+		}
+
+		$handle = fopen( $file['tmp_name'], 'r' );
+		$header = $handle ? fgetcsv( $handle ) : false;
+		if ( is_array( $header ) && isset( $header[0] ) ) {
+			$header[0] = preg_replace( '/^\xEF\xBB\xBF/', '', (string) $header[0] );
+		}
+		$required = array( 'source', 'target', 'status_code', 'is_active' );
+		$report = array( 'created' => 0, 'duplicates' => array(), 'conflicts' => array(), 'errors' => array() );
+		if ( ! is_array( $header ) || array_diff( $required, array_map( 'sanitize_key', $header ) ) ) $report['errors'][] = __( 'The CSV header must contain source, target, status_code, and is_active.', 'traveljabs' );
+		if ( empty( $report['errors'] ) ) {
+			$indexes = array_flip( array_map( 'sanitize_key', $header ) );
+			while ( ( $row = fgetcsv( $handle ) ) !== false ) {
+				$batch = $this->manager->create_manual_batch( array( $row[ $indexes['source'] ] ?? '' ), (string) ( $row[ $indexes['target'] ] ?? '' ), (int) ( $row[ $indexes['status_code'] ] ?? 301 ), ! empty( $row[ $indexes['is_active'] ] ) );
+				$report['created'] += $batch['created'];
+				$report['duplicates'] = array_merge( $report['duplicates'], $batch['duplicates'] );
+				$report['conflicts'] = array_merge( $report['conflicts'], $batch['conflicts'] );
+				$report['errors'] = array_merge( $report['errors'], $batch['errors'] );
+			}
+		}
+		if ( $handle ) fclose( $handle );
+		$this->queue_notice( $report['created'] > 0 && empty( $report['errors'] ) ? 'success' : 'warning', sprintf( _n( '%d redirect imported.', '%d redirects imported.', $report['created'], 'traveljabs' ), $report['created'] ), $report );
+		wp_safe_redirect( $this->page_url() );
+		exit;
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Internal helpers
 	 * ------------------------------------------------------------------- */
@@ -485,18 +568,20 @@ final class RedirectAdmin {
 	 * @param array<string, string|int>  $extra        Extra query args preserved.
 	 * @return string
 	 */
-	private function action_url( string $action, int $id, string $nonce_action, array $extra = array() ): string {
+	private function action_url( string $action, int $id = 0, string $nonce_action = '', array $extra = array() ): string {
 		$args = array_merge(
 			$extra,
 			array(
 				'action' => $action,
-				'id'     => $id,
 			)
 		);
+		if ( $id > 0 ) {
+			$args['id'] = $id;
+		}
 
 		return wp_nonce_url(
 			add_query_arg( $args, admin_url( 'admin-post.php' ) ),
-			$nonce_action
+			$nonce_action ?: $action
 		);
 	}
 
