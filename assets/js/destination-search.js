@@ -1,125 +1,166 @@
 (function () {
-	'use strict';
+    'use strict';
 
-	var config = window.traveljabsDestinationSearch || {};
-	var searches = document.querySelectorAll('.traveljabs-destination-search');
+    var config = window.traveljabsDestinationSearch || {};
+    var searches = document.querySelectorAll('.traveljabs-destination-search');
 
-	Array.prototype.forEach.call(searches, function (search) {
-		var input = search.querySelector('.traveljabs-destination-search__input');
-		var results = search.querySelector('.traveljabs-destination-search__results');
-		var destinations = [];
+    Array.prototype.forEach.call(searches, function (search) {
+        var input = search.querySelector('.traveljabs-destination-search__input');
+        var results = search.querySelector('.traveljabs-destination-search__results');
+        var destinations = [];
 
-		function openResults() {
-			search.classList.add('is-open');
-		}
+        function openResults() {
+            search.classList.add('is-open');
+        }
 
-		function closeResults() {
-			search.classList.remove('is-open');
-		}
+        function closeResults() {
+            search.classList.remove('is-open');
+        }
 
-		function render(items) {
-			results.innerHTML = '';
+        function render(items) {
+            results.innerHTML = '';
 
-			if (!items.length && input.value.trim()) {
-				var empty = document.createElement('li');
-				empty.textContent = config.notFoundText || 'No destination found.';
-				results.appendChild(empty);
-				return;
-			}
+            if (!items.length && input.value.trim()) {
+                var empty = document.createElement('li');
+                empty.textContent = config.notFoundText || 'No destination found.';
+                results.appendChild(empty);
+                return;
+            }
 
-			items.forEach(function (item) {
-				var listItem = document.createElement('li');
-				var link = document.createElement('a');
+            items.forEach(function (item) {
+                var listItem = document.createElement('li');
+                var link = document.createElement('a');
 
-				link.href = item.link;
-				link.textContent = item.title;
-				listItem.appendChild(link);
-				results.appendChild(listItem);
-			});
-		}
+                link.href = item.url;
+                link.textContent = item.title;
 
-		function showMessage(message, className) {
-			results.innerHTML = '';
-			var item = document.createElement('li');
-			item.textContent = message;
-			item.className = className || '';
-			results.appendChild(item);
-		}
+                listItem.appendChild(link);
+                results.appendChild(listItem);
+            });
+        }
 
-		function filterDestinations() {
-			var query = input.value.trim().toLowerCase();
-			var matches = destinations.filter(function (item) {
-				return item.title.toLowerCase().indexOf(query) !== -1;
-			});
+        function showMessage(message, className) {
+            results.innerHTML = '';
 
-			openResults();
-			render(matches);
-		}
+            var item = document.createElement('li');
+            item.textContent = message;
+            item.className = className || '';
 
-		async function loadDestinations() {
-			var page = 1;
-			var allDestinations = [];
-			var totalPages = 1;
+            results.appendChild(item);
+        }
 
-			do {
-				var url = new URL(config.restUrl, window.location.origin);
-				url.searchParams.set('_fields', 'id,title,link');
-				url.searchParams.set('per_page', '100');
-				url.searchParams.set('page', page);
-				url.searchParams.set('orderby', 'title');
-				url.searchParams.set('order', 'asc');
+        function filterDestinations() {
+            var query = input.value.trim().toLowerCase();
 
-				var response = await fetch(url.toString());
+            var matches = destinations.filter(function (item) {
+                return item.title.toLowerCase().indexOf(query) !== -1;
+            });
 
-				if (!response.ok) {
-					throw new Error('Destination request failed');
-				}
+            openResults();
+            render(matches);
+        }
 
-				totalPages = parseInt(response.headers.get('X-WP-TotalPages'), 10) || 1;
-				var items = await response.json();
-				allDestinations = allDestinations.concat(items.map(function (item) {
-					return {
-						id: item.id,
-						title: item.title.rendered,
-						link: item.link
-					};
-				}));
-				page += 1;
-			} while (page <= totalPages);
+        async function loadDestinations() {
+            var response = await fetch(config.restUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
 
-			return allDestinations;
-		}
+            if (!response.ok) {
+                throw new Error('Destination request failed');
+            }
 
-		showMessage(config.loadingText || 'Loading destinations...', 'is-loading');
-		input.addEventListener('focus', function () {
-			openResults();
+            var responseData = await response.json();
 
-			if (destinations.length) {
-				render(destinations);
-			}
-		});
-		input.addEventListener('keydown', function (event) {
-			if ('Escape' === event.key) {
-				closeResults();
-				input.blur();
-			}
-		});
-		document.addEventListener('click', function (event) {
-			if (!search.contains(event.target)) {
-				closeResults();
-			}
-		});
+            if (
+                !responseData ||
+                !responseData.success ||
+                !Array.isArray(responseData.data)
+            ) {
+                throw new Error('Invalid destination response');
+            }
 
-		loadDestinations()
-			.then(function (items) {
-				destinations = items;
-				input.disabled = false;
-				input.placeholder = config.placeholderText || 'Search the destination';
-				input.addEventListener('input', filterDestinations);
-				results.innerHTML = '';
-			})
-			.catch(function () {
-				showMessage(config.errorText || 'Could not load destinations. Please try again.', 'is-error');
-			});
-	});
+            return responseData.data.map(function (item) {
+                return {
+                    id: item.id,
+                    title: item.title,
+                    url: item.url
+                };
+            });
+        }
+
+        /*
+         * Initial loading state.
+         */
+        showMessage(
+            config.loadingText || 'Loading destinations...',
+            'is-loading'
+        );
+
+        /*
+         * Open destination list when input receives focus.
+         */
+        input.addEventListener('focus', function () {
+            openResults();
+
+            if (destinations.length) {
+                if (input.value.trim()) {
+                    filterDestinations();
+                } else {
+                    render(destinations);
+                }
+            }
+        });
+
+        /*
+         * Close results on Escape.
+         */
+        input.addEventListener('keydown', function (event) {
+            if ('Escape' === event.key) {
+                closeResults();
+                input.blur();
+            }
+        });
+
+        /*
+         * Close results when clicking outside.
+         */
+        document.addEventListener('click', function (event) {
+            if (!search.contains(event.target)) {
+                closeResults();
+            }
+        });
+
+        /*
+         * Load all cached destinations.
+         */
+        loadDestinations()
+            .then(function (items) {
+                destinations = items;
+
+                input.disabled = false;
+
+                input.placeholder =
+                    config.placeholderText ||
+                    'Search the destination';
+
+                input.addEventListener(
+                    'input',
+                    filterDestinations
+                );
+
+                results.innerHTML = '';
+            })
+            .catch(function () {
+                input.disabled = true;
+
+                showMessage(
+                    config.errorText ||
+                    'Could not load destinations. Please try again.',
+                    'is-error'
+                );
+            });
+    });
 })();
