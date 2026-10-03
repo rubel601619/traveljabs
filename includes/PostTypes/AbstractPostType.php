@@ -115,7 +115,7 @@ abstract class AbstractPostType {
 			'show_ui'             => true,
 			'show_in_menu'        => AdminMenu::PARENT_SLUG,
 			'show_in_rest'        => true,
-			'has_archive'         => false,
+			'has_archive'         => true,
 			'hierarchical'        => false,
 			'map_meta_cap'        => true,
 			'capability_type'     => 'post',
