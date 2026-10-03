@@ -28,7 +28,7 @@
 }
 
 .traveljabs-destination-search__results {
-	position: absolute;
+	position: inherit;
 	top: 100%;
 	left: 0;
 	z-index: 20;
